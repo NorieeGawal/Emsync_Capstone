@@ -5,13 +5,6 @@
         </div>
     @endif
 
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h3 class="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-800">Attendance Bulk Entry</h3>
-            <p class="mt-1 text-sm text-slate-500">Check-ins after the scheduled time are automatically marked late.</p>
-        </div>
-    </div>
-
     <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(190px,0.52fr)] xl:items-start">
         <div class="space-y-3">
             <form method="POST" action="{{ route('hr.attendance.settings.update') }}" class="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.05)]">

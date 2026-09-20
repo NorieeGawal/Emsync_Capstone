@@ -15,6 +15,9 @@
             <h3 class="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-800">Bulk KPI Entry</h3>
             <p class="mt-1 text-sm text-slate-500">Apply one score to multiple employees in a single review cycle.</p>
         </div>
+        @if(auth()->user()->role === 'hr')
+            <a href="{{ route('hr.kpi.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#f4c212] hover:bg-[#fff9df]">Edit individual KPI</a>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(190px,0.52fr)] xl:items-start">
@@ -43,7 +46,7 @@
                 </div>
             </form>
 
-            <form method="POST" action="{{ route($bulkStoreRoute) }}" x-data="{ selected: [] }" class="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
+            <form method="POST" action="{{ route($bulkStoreRoute) }}" x-data="{ selected: [], employeeIds: @js($employees->pluck('id')->map(fn ($id) => (string) $id)->values()->all()) }" class="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
                 @csrf
                 <div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
@@ -80,7 +83,7 @@
                 <div class="mt-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white">
                     <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                         <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                            <input type="checkbox" @change="selected = $event.target.checked ? {{ $employees->pluck('id')->values()->toJson() }} : []" class="rounded border-slate-300 text-[#111111] focus:ring-[#f4c212]">
+                            <input type="checkbox" @change="selected = $event.target.checked ? employeeIds : []" class="rounded border-slate-300 text-[#111111] focus:ring-[#f4c212]">
                             Select all
                         </label>
                         <span class="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-slate-500">{{ $employees->count() }} shown</span>

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'role',
         'department_id',
+        'profile_photo_path',
     ];
 
     protected $hidden = [
@@ -63,8 +64,9 @@ class User extends Authenticatable
      */
     public function attendancePercentage(string $period): float
     {
+        $month = Carbon::createFromFormat('Y-m', $period);
         $logs = $this->attendanceLogs()
-            ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$period])
+            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->get();
 
         if ($logs->isEmpty()) {
@@ -82,8 +84,9 @@ class User extends Authenticatable
      */
     public function punctualityPercentage(string $period): float
     {
+        $month = Carbon::createFromFormat('Y-m', $period);
         $logs = $this->attendanceLogs()
-            ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$period])
+            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->whereIn('status', ['present', 'late'])
             ->get();
 
@@ -111,7 +114,22 @@ class User extends Authenticatable
         $manualScores['Attendance'] = $this->attendancePercentage($period);
         $manualScores['Punctuality'] = $this->punctualityPercentage($period);
 
-        return $manualScores;
+        $preferredOrder = ['Productivity', 'Efficiency', 'Work Quality', 'Timeliness', 'Attendance', 'Punctuality'];
+        $orderedScores = [];
+
+        foreach ($preferredOrder as $name) {
+            if (array_key_exists($name, $manualScores)) {
+                $orderedScores[$name] = $manualScores[$name];
+            }
+        }
+
+        foreach ($manualScores as $name => $score) {
+            if (! array_key_exists($name, $orderedScores)) {
+                $orderedScores[$name] = $score;
+            }
+        }
+
+        return $orderedScores;
     }
 
     /**

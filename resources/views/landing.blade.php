@@ -27,7 +27,7 @@
                 </div>
 
                 <a href="{{ route('login') }}" class="rounded-full bg-[#F4C212] px-5 py-2.5 text-sm font-bold text-[#0f1114] shadow-[0_15px_30px_rgba(244,194,18,0.35)] transition hover:bg-[#f5c93b]">
-                    Sign In
+                    Log In
                 </a>
             </nav>
         </header>
@@ -57,20 +57,7 @@
                         </a>
                     </div>
 
-                    <div class="mt-10 flex flex-wrap items-center gap-8 text-sm text-white/60">
-                        <div>
-                            <p class="text-2xl font-black text-white">99.9%</p>
-                            <p class="mt-1 uppercase tracking-[0.18em] text-white/50">Uptime</p>
-                        </div>
-                        <div>
-                            <p class="text-2xl font-black text-white">2.4k+</p>
-                            <p class="mt-1 uppercase tracking-[0.18em] text-white/50">Employees</p>
-                        </div>
-                        <div>
-                            <p class="text-2xl font-black text-white">24/7</p>
-                            <p class="mt-1 uppercase tracking-[0.18em] text-white/50">Monitoring</p>
-                        </div>
-                    </div>
+                
                 </div>
 
                 <div class="relative animate-float">

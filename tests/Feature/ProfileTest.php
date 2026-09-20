@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -33,6 +35,43 @@ test('profile information can be updated', function () {
     $this->assertNull($user->email_verified_at);
 });
 
+test('user can upload a profile photo', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch('/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_photo' => UploadedFile::fake()->image('avatar.png'),
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/profile');
+
+    $user->refresh();
+
+    expect($user->profile_photo_path)->not->toBeNull();
+    Storage::disk('public')->assertExists($user->profile_photo_path);
+});
+
+test('user can remove their profile photo', function () {
+    Storage::fake('public');
+    $user = User::factory()->create(['profile_photo_path' => 'profile-photos/avatar.jpg']);
+    Storage::disk('public')->put($user->profile_photo_path, 'photo');
+
+    $this->actingAs($user)
+        ->patch('/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'remove_profile_photo' => '1',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/profile');
+
+    expect($user->refresh()->profile_photo_path)->toBeNull();
+    Storage::disk('public')->assertMissing('profile-photos/avatar.jpg');
+});
+
 test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
 
@@ -51,7 +90,7 @@ test('email verification status is unchanged when the email address is unchanged
 });
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'hr']);
 
     $response = $this
         ->actingAs($user)
@@ -68,7 +107,7 @@ test('user can delete their account', function () {
 });
 
 test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'hr']);
 
     $response = $this
         ->actingAs($user)
@@ -82,4 +121,16 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect('/profile');
 
     $this->assertNotNull($user->fresh());
+});
+
+test('non HR users cannot delete their account', function () {
+    foreach (['manager', 'employee'] as $role) {
+        $user = User::factory()->create(['role' => $role]);
+
+        $this->actingAs($user)
+            ->delete('/profile', ['password' => 'password'])
+            ->assertForbidden();
+
+        $this->assertNotNull($user->fresh());
+    }
 });

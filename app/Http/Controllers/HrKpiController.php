@@ -13,6 +13,7 @@ class HrKpiController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $period = $request->query('period', now()->format('Y-m'));
 
         $employees = User::whereIn('role', ['employee', 'manager'])
             ->with('department')
@@ -20,8 +21,16 @@ class HrKpiController extends Controller
                 $query->where('name', 'like', "%{$search}%");
             })
             ->get();
+        $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
+            ->get()
+            ->sortBy(fn ($indicator) => array_search($indicator->name, $this->manualIndicatorNames(), true))
+            ->values();
+        $records = KpiRecord::whereIn('employee_id', $employees->pluck('id'))
+            ->where('period', $period)
+            ->get()
+            ->groupBy('employee_id');
 
-        return view('hr.kpi.index', compact('employees', 'search'));
+        return view('hr.kpi.index', compact('employees', 'search', 'period', 'indicators', 'records'));
     }
 
     public function create(User $employee)
@@ -31,15 +40,30 @@ class HrKpiController extends Controller
         return view('hr.kpi.create', compact('employee', 'indicators'));
     }
 
+    public function edit(Request $request, User $employee)
+    {
+        $period = $request->query('period', now()->format('Y-m'));
+        $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->get();
+        $records = KpiRecord::where('employee_id', $employee->id)
+            ->where('period', $period)
+            ->get()
+            ->keyBy('kpi_indicator_id');
+
+        return view('hr.kpi.edit', compact('employee', 'indicators', 'period', 'records'));
+    }
+
     public function bulk(Request $request)
     {
         $departmentId = $request->query('department');
         $search = $request->query('search');
 
-        $departments = Department::orderBy('name')->get();
+        $departments = Department::when(auth()->user()->role === 'manager', fn ($query) => $query->whereKey(auth()->user()->department_id))
+            ->orderBy('name')
+            ->get();
         $employees = User::whereIn('role', ['employee', 'manager'])
             ->with('department')
             ->when($departmentId, fn ($query) => $query->where('department_id', $departmentId))
+            ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
             ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->get();
@@ -63,6 +87,7 @@ class HrKpiController extends Controller
             ->findOrFail($validated['kpi_indicator_id']);
         $employeeIds = User::whereIn('role', ['employee', 'manager'])
             ->whereIn('id', $validated['employee_ids'])
+            ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
             ->pluck('id');
 
         abort_if($employeeIds->count() !== count($validated['employee_ids']), 422, 'One or more selected users cannot receive KPI scores.');

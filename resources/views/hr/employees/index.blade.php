@@ -1,21 +1,20 @@
 <x-layouts.dashboard title="Employees">
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-6">
         <div>
-            <h3 class="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-800">Workforce Directory</h3>
-            <p class="mt-1 text-sm text-slate-500">Manage employee, manager, and HR accounts.</p>
+            <p class="mt-1 text-sm text-slate-900">Manage employee, manager, and HR accounts.</p>
         </div>
-        <a href="{{ route('hr.employees.create') }}" class="inline-flex items-center justify-center self-start rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_15px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 hover:bg-[#232a30] sm:self-center">
-            Add Account
-        </a>
     </div>
 
-    <form method="GET" action="{{ route('hr.employees.index') }}" class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+    <form method="GET" action="{{ route('hr.employees.index') }}" class="mb-5 flex flex-wrap items-center gap-3">
         <div class="relative max-w-sm">
             <input type="text" name="search" value="{{ $search }}" placeholder="Search by name..." class="w-full rounded-xl border-slate-300 bg-slate-50 py-2 pl-4 pr-10 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">
             <button type="submit" aria-label="Search employees" class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
                 &#128269;
             </button>
         </div>
+        <a href="{{ route('hr.employees.create') }}" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_15px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 hover:bg-[#232a30] sm:ml-auto">
+            Add Account
+        </a>
         @if($search)
             <a href="{{ route('hr.employees.index') }}" class="text-sm font-medium text-slate-500 hover:text-red-600">Clear</a>
         @endif

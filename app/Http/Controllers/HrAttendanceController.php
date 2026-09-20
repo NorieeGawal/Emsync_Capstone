@@ -30,6 +30,7 @@ class HrAttendanceController extends Controller
         $employees = User::whereIn('role', ['employee', 'manager'])
             ->with('department')
             ->when($departmentId, fn ($query) => $query->where('department_id', $departmentId))
+            ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
             ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->get();
@@ -63,6 +64,14 @@ class HrAttendanceController extends Controller
             'entries.*.time_in' => 'nullable|date_format:H:i',
             'entries.*.time_out' => 'nullable|date_format:H:i',
         ]);
+
+        $entryEmployeeIds = array_map('intval', array_keys($validated['entries']));
+        $allowedEmployees = User::whereIn('role', ['employee', 'manager'])
+            ->whereIn('id', $entryEmployeeIds)
+            ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
+            ->pluck('id');
+
+        abort_if($allowedEmployees->count() !== count(array_unique($entryEmployeeIds)), 422, 'One or more employees cannot receive attendance records.');
 
         foreach ($validated['entries'] as $employeeId => $entry) {
             $status = $entry['status'];

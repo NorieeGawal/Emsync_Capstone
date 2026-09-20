@@ -17,6 +17,7 @@ Route::middleware(['auth', 'verified', 'role:hr'])->prefix('hr')->name('hr.')->g
     Route::get('/kpi', [App\Http\Controllers\HrKpiController::class, 'index'])->name('kpi.index');
     Route::get('/kpi/bulk', [App\Http\Controllers\HrKpiController::class, 'bulk'])->name('kpi.bulk');
     Route::post('/kpi/bulk', [App\Http\Controllers\HrKpiController::class, 'storeBulk'])->name('kpi.bulk.store');
+    Route::get('/kpi/{employee}/edit', [App\Http\Controllers\HrKpiController::class, 'edit'])->name('kpi.edit');
     Route::get('/kpi/{employee}/create', [App\Http\Controllers\HrKpiController::class, 'create'])->name('kpi.create');
     Route::post('/kpi/{employee}', [App\Http\Controllers\HrKpiController::class, 'store'])->name('kpi.store');
     Route::get('/attendance', [App\Http\Controllers\HrAttendanceController::class, 'index'])->name('attendance.index');
@@ -47,6 +48,8 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [App\Http\Controllers\EmployeeDashboardController::class, 'index'])->name('employee.dashboard');
 });
 Route::middleware('auth')->group(function () {
+    Route::post('/notifications/read', [App\Http\Controllers\DashboardNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [App\Http\Controllers\DashboardNotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

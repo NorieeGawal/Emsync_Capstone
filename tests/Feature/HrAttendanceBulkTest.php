@@ -85,3 +85,25 @@ test('attendance status is automatically based on the scheduled time in', functi
 
     expect(AttendanceLog::where('employee_id', $employee->id)->first()->status)->toBe('late');
 });
+
+test('bulk attendance rejects users outside the employee and manager roles', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+
+    $this->actingAs($hr)
+        ->post(route('hr.attendance.bulk.store'), [
+            'date' => '2026-09-18',
+            'entries' => [
+                $hr->id => [
+                    'status' => 'present',
+                    'time_in' => '08:00',
+                    'time_out' => '17:00',
+                ],
+            ],
+        ])
+        ->assertStatus(422);
+
+    $this->assertDatabaseMissing('attendance_logs', [
+        'employee_id' => $hr->id,
+        'date' => '2026-09-18',
+    ]);
+});

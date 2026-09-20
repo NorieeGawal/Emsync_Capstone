@@ -144,10 +144,93 @@
                     </div>
 
                     <div class="flex items-center gap-2 self-end sm:gap-3 sm:self-auto">
-                        <button type="button" aria-label="Notifications" class="hidden h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800 sm:flex">◌</button>
-                        <div class="flex max-w-[min(58vw,240px)] items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-0.5 shadow-sm sm:gap-2 sm:px-2.5 sm:py-1">
-                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4c212] text-xs font-black text-[#111111]">{{ Str::upper(Str::substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-                            <span class="truncate text-sm font-semibold text-slate-700">{{ auth()->user()->name ?? 'Admin' }}</span>
+                        <div x-data="{ notificationsOpen: false }" @click.outside="notificationsOpen = false" class="relative">
+                            <button type="button" @click="notificationsOpen = !notificationsOpen" aria-label="Notifications" :aria-expanded="notificationsOpen" class="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#f4c212] focus:ring-offset-2">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                                    <path d="M10 21h4"></path>
+                                </svg>
+                                @if($headerNotifications->count())
+                                    <span class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[0.58rem] font-bold leading-none text-white">{{ $headerNotifications->count() }}</span>
+                                @endif
+                            </button>
+
+                            <div x-cloak x-show="notificationsOpen" x-transition.origin.top.right class="absolute right-0 top-10 z-[80] w-[min(88vw,22rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                                <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800">Notifications</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">{{ $headerNotifications->count() }} pending item(s)</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        @if($headerNotifications->count())
+                                            <form method="POST" action="{{ route('notifications.read-all') }}">
+                                                @csrf
+                                                <input type="hidden" name="redirect_to" value="{{ url()->full() }}">
+                                                @foreach($headerNotifications as $notification)
+                                                    <input type="hidden" name="notification_keys[]" value="{{ $notification['key'] }}">
+                                                @endforeach
+                                                <button type="submit" class="text-xs font-semibold text-slate-500 transition hover:text-slate-800">Mark all as read</button>
+                                            </form>
+                                        @endif
+                                        <a href="{{ url()->full() }}" class="text-xs font-semibold text-slate-500 transition hover:text-slate-800">Refresh</a>
+                                    </div>
+                                </div>
+
+                                <div class="max-h-80 overflow-y-auto p-2">
+                                    @forelse($headerNotifications as $notification)
+                                        <div class="flex gap-3 rounded-xl p-3 transition hover:bg-slate-50">
+                                            <form method="POST" action="{{ route('notifications.read') }}" class="flex min-w-0 flex-1">
+                                                @csrf
+                                                <input type="hidden" name="notification_key" value="{{ $notification['key'] }}">
+                                                <input type="hidden" name="redirect_to" value="{{ $notification['href'] }}">
+                                                <button type="submit" class="flex min-w-0 flex-1 gap-3 text-left">
+                                                <span class="mt-1 h-2 w-2 shrink-0 rounded-full
+                                                    @if($notification['tone'] === 'red') bg-red-500
+                                                    @elseif($notification['tone'] === 'blue') bg-blue-500
+                                                    @elseif($notification['tone'] === 'amber') bg-[#f4c212]
+                                                    @else bg-slate-400 @endif"></span>
+                                                <span class="min-w-0">
+                                                    <span class="block text-sm font-semibold text-slate-800">{{ $notification['title'] }}</span>
+                                                    <span class="mt-1 block text-xs leading-5 text-slate-500">{{ $notification['message'] }}</span>
+                                                </span>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('notifications.read') }}" class="shrink-0 self-start">
+                                                @csrf
+                                                <input type="hidden" name="notification_key" value="{{ $notification['key'] }}">
+                                                <input type="hidden" name="redirect_to" value="{{ url()->full() }}">
+                                                <button type="submit" class="pt-0.5 text-[0.65rem] font-semibold text-slate-400 transition hover:text-slate-800">Mark as read</button>
+                                            </form>
+                                        </div>
+                                    @empty
+                                        <div class="px-3 py-7 text-center">
+                                            <svg class="mx-auto h-7 w-7 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="m5 12 4 4L19 6"></path>
+                                            </svg>
+                                            <p class="mt-2 text-sm font-semibold text-slate-700">All caught up</p>
+                                            <p class="mt-1 text-xs text-slate-500">There are no pending items right now.</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                        <div x-data="{ profileOpen: false }" @click.outside="profileOpen = false" class="relative">
+                            <button type="button" @click="profileOpen = !profileOpen" :aria-expanded="profileOpen" class="flex max-w-[min(58vw,240px)] items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-left shadow-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#f4c212] focus:ring-offset-2 sm:gap-2 sm:px-2.5 sm:py-1">
+                                @if(auth()->user()->profile_photo_path)
+                                    <img src="{{ url('/storage/' . ltrim(auth()->user()->profile_photo_path, '/')) }}" alt="{{ auth()->user()->name }}" class="h-7 w-7 shrink-0 rounded-full object-cover">
+                                @else
+                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4c212] text-xs font-black text-[#111111]">{{ Str::upper(Str::substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
+                                @endif
+                                <span class="truncate text-sm font-semibold text-slate-700">{{ auth()->user()->name ?? 'Admin' }}</span>
+                                <svg class="h-3.5 w-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path></svg>
+                            </button>
+                            <div x-cloak x-show="profileOpen" x-transition.origin.top.right class="absolute right-0 top-11 z-[80] w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                                <div class="border-b border-slate-100 px-3 pb-2 pt-1">
+                                    <p class="truncate text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
+                                    <p class="mt-0.5 text-xs text-slate-500">{{ ucfirst(auth()->user()->role) }} · {{ auth()->user()->department->name ?? 'No department' }}</p>
+                                </div>
+                                <a href="{{ route('profile.edit') }}" class="mt-1 block rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">View profile</a>
+                            </div>
                         </div>
                     </div>
                 </div>
