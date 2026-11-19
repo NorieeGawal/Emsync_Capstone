@@ -13,6 +13,8 @@ Route::get('/dashboard', function () {
 
 Route::middleware(['auth', 'verified', 'role:hr', 'prevent-back-history'])->prefix('hr')->name('hr.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HrDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/employees/archived', [App\Http\Controllers\HrEmployeeController::class, 'archived'])->name('employees.archived');
+    Route::post('/employees/{employee}/restore', [App\Http\Controllers\HrEmployeeController::class, 'restore'])->name('employees.restore');
     Route::resource('employees', App\Http\Controllers\HrEmployeeController::class)->parameters(['employees' => 'employee'])->except(['show']);
     Route::get('/kpi', [App\Http\Controllers\HrKpiController::class, 'index'])->name('kpi.index');
     Route::get('/kpi/bulk', [App\Http\Controllers\HrKpiController::class, 'bulk'])->name('kpi.bulk');

@@ -22,6 +22,24 @@ class HrEmployeeController extends Controller
         return view('hr.employees.index', compact('employees', 'search'));
     }
 
+    public function archived()
+    {
+        $employees = User::onlyTrashed()
+            ->with('department')
+            ->orderByDesc('deleted_at')
+            ->paginate(15);
+
+        return view('hr.employees.archived', compact('employees'));
+    }
+
+    public function restore(int $employeeId)
+    {
+        $employee = User::onlyTrashed()->findOrFail($employeeId);
+        $employee->restore();
+
+        return redirect()->route('hr.employees.archived')->with('success', 'Account restored successfully.');
+    }
+
     public function create()
     {
         $departments = Department::all();
@@ -72,6 +90,6 @@ class HrEmployeeController extends Controller
     public function destroy(User $employee)
     {
         $employee->delete();
-        return redirect()->route('hr.employees.index')->with('success', 'Account removed.');
+        return redirect()->route('hr.employees.index')->with('success', 'Account archived. It will be permanently deleted after one month.');
     }
 }

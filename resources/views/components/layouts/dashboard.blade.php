@@ -80,6 +80,9 @@
                             </svg>
                             Employees
                         </a>
+                        <a href="{{ route('hr.employees.archived') }}" class="ml-8 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition hover:bg-black/5 {{ request()->routeIs('hr.employees.archived') ? 'bg-[#111111] text-white shadow-inner' : 'text-slate-700' }}">
+                            Archived Accounts
+                        </a>
                         <a href="{{ route('hr.kpi.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-[1.02rem] font-medium transition hover:bg-black/5 {{ request()->routeIs('hr.kpi.*') ? 'bg-[#111111] text-white shadow-inner' : 'text-[#111111]' }}">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 19h16"></path>

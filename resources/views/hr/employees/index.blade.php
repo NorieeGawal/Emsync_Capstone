@@ -10,7 +10,10 @@
                 </svg>
             </button>
         </div>
-        <a href="{{ route('hr.employees.create') }}" class="ml-auto inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
+        <a href="{{ route('hr.employees.archived') }}" class="ml-auto inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+            Archived Accounts
+        </a>
+        <a href="{{ route('hr.employees.create') }}" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
             Add Account
         </a>
         @if($search)
@@ -109,7 +112,7 @@
         </aside>
     </div>
 
-    <x-confirm-modal id="delete-modal" title="Remove Account" message="Are you sure you want to remove this account? This action cannot be undone." />
+    <x-confirm-modal id="delete-modal" title="Archive Account" message="This account will be moved to Archived Accounts. It can be restored for one month before permanent deletion." />
 
     <script>
         let deleteFormId = null;
