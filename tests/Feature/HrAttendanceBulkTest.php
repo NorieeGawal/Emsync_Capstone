@@ -13,6 +13,27 @@ test('hr can open the bulk attendance page', function () {
         ->assertOk();
 });
 
+test('attendance pages use explicit 24-hour time fields', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employee = User::factory()->create(['role' => 'employee']);
+
+    $this->actingAs($hr)
+        ->get(route('hr.attendance.bulk'))
+        ->assertOk()
+        ->assertSee('type="text" name="scheduled_time_in"', false)
+        ->assertSee('type="text" name="scheduled_time_out"', false)
+        ->assertSee('type="text" name="entries['.$employee->id.'][time_in]"', false)
+        ->assertSee('type="text" name="entries['.$employee->id.'][time_out]"', false)
+        ->assertSee('pattern="([01][0-9]|2[0-3]):[0-5][0-9]"', false)
+        ->assertDontSee('type="time"', false);
+
+    $this->get(route('hr.attendance.create', $employee))
+        ->assertOk()
+        ->assertSee('type="text" name="time_in"', false)
+        ->assertSee('type="text" name="time_out"', false)
+        ->assertSee('Use 24-hour time (HH:MM).');
+});
+
 test('hr can save attendance for multiple employees at once', function () {
     $hr = User::factory()->create(['role' => 'hr']);
     $employeeOne = User::factory()->create(['role' => 'employee']);

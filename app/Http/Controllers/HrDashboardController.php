@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Department;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class HrDashboardController extends Controller
 {
@@ -76,6 +77,19 @@ class HrDashboardController extends Controller
             }
             $trendDatasets[$name] = $data;
         }
+
+        $perPage = 10;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $employeeSummaries = new LengthAwarePaginator(
+            $employeeSummaries->forPage($currentPage, $perPage)->values(),
+            $employeeSummaries->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('hr.dashboard', compact(
             'departments', 'departmentId', 'period', 'search',

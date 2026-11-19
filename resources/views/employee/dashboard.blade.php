@@ -1,15 +1,24 @@
-<x-layouts.dashboard title="Dashboard">
-    <div class="mb-6">
-        <h3 class="text-xl font-semibold text-gray-800">Hi {{ $employee->name }}</h3>
-        <p class="text-gray-500 text-sm">Welcome to EMSYNC. Here's your performance dashboard for {{ \Carbon\Carbon::parse($period . '-01')->format('F Y') }}.</p>
-    </div>
-
+<x-layouts.dashboard
+    title="Employee Dashboard"
+    header-title="Hi {{ $employee->name }}"
+    header-subtitle="Welcome to EMSYNC. Here's your performance dashboard for {{ \Carbon\Carbon::parse($period . '-01')->format('F Y') }}."
+>
+    <div class="space-y-6">
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         @foreach($scores as $name => $score)
             <div class="bg-white rounded-lg shadow-sm p-4">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">{{ $name }}</p>
                 <p class="text-2xl font-bold text-blue-900 mt-1">{{ number_format($score, 0) }}%</p>
+                @if($name === 'Productivity')
+                    <p class="mt-1 text-xs text-gray-500">
+                        @if($productivityRecord?->workload_target)
+                            {{ number_format($productivityRecord->workload_completed) }} completed of {{ number_format($productivityRecord->workload_target) }} target
+                        @else
+                            Workload details not recorded
+                        @endif
+                    </p>
+                @endif
                 <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2">
                     <div class="bg-blue-700 h-1.5 rounded-full" style="width: {{ min($score, 100) }}%"></div>
                 </div>
@@ -17,14 +26,16 @@
         @endforeach
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- Trend chart -->
         <div class="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
             <div class="flex justify-between items-center mb-4">
                 <h4 class="font-semibold text-gray-800">Overall Score Trend</h4>
                 <p class="text-xs text-gray-500">Last 3 months</p>
             </div>
-            <canvas id="trendChart" height="100"></canvas>
+            <div class="relative h-56 sm:h-64">
+                <canvas id="trendChart"></canvas>
+            </div>
         </div>
 
         <!-- Overall score ring -->
@@ -73,13 +84,13 @@
     </div>
 
         <!-- Performance feedback -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 mt-6">
+    <div class="rounded-lg bg-white p-6 shadow-sm">
         <h4 class="font-semibold text-gray-800 mb-4">Performance Feedback</h4>
         <div class="space-y-4 max-h-80 overflow-y-auto pr-2">
             @forelse($notes as $note)
                 <div class="border-l-4 border-blue-700 bg-gray-50 px-4 py-3 rounded">
                     <p class="text-sm text-gray-800">{{ $note->note }}</p>
-                    <p class="text-xs text-gray-500 mt-2">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y g:i A') }}</p>
+                    <p class="text-xs text-gray-500 mt-2">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y H:i') }}</p>
                 </div>
             @empty
                 <p class="text-sm text-gray-400">No feedback yet.</p>
@@ -88,11 +99,12 @@
     </div>
 
     <!-- Recent attendance -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden mt-6">
+    <div class="overflow-hidden rounded-lg bg-white shadow-sm">
         <div class="px-6 py-4 border-b flex justify-between items-center">
             <h4 class="font-semibold text-gray-800">Recent Attendance</h4>
         </div>
-        <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[640px] text-left text-sm">
             <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
                     <th class="px-6 py-3">Date</th>
@@ -105,8 +117,8 @@
                 @forelse($recentLogs as $log)
                     <tr>
                         <td class="px-6 py-4">{{ \Carbon\Carbon::parse($log->date)->format('M d') }}</td>
-                        <td class="px-6 py-4 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}</td>
-                        <td class="px-6 py-4 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('h:i A') : '—' }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-0.5 rounded text-xs
                                 @if($log->status === 'present') bg-green-100 text-green-700
@@ -124,6 +136,8 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
+    </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -145,6 +159,7 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
                     y: { beginAtZero: true, max: 100 }

@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Attendance">
+<x-layouts.dashboard title="HR Attendance Overview">
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h3 class="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-800">Attendance</h3>

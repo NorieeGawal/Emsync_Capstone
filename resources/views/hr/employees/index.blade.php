@@ -1,22 +1,20 @@
-<x-layouts.dashboard title="Employees">
-    <div class="mb-6">
-        <div>
-            <p class="mt-1 text-sm text-slate-900">Manage employee, manager, and HR accounts.</p>
-        </div>
-    </div>
+<x-layouts.dashboard title="HR Employees" header-subtitle="Manage employee, manager, and HR accounts.">
 
-    <form method="GET" action="{{ route('hr.employees.index') }}" class="mb-5 flex flex-wrap items-center gap-3">
-        <div class="relative max-w-sm">
-            <input type="text" name="search" value="{{ $search }}" placeholder="Search by name..." class="w-full rounded-xl border-slate-300 bg-slate-50 py-2 pl-4 pr-10 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">
-            <button type="submit" aria-label="Search employees" class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
-                &#128269;
+    <form method="GET" action="{{ route('hr.employees.index') }}" class="mb-6 flex flex-wrap items-center gap-3 rounded-[22px] border border-slate-200 bg-white/80 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
+        <div class="relative w-full max-w-sm">
+            <input type="text" name="search" value="{{ $search }}" placeholder="Search by name..." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 py-2 pl-4 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
+            <button type="submit" aria-label="Search employees" class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5"></circle>
+                    <path d="m16 16 4 4"></path>
+                </svg>
             </button>
         </div>
-        <a href="{{ route('hr.employees.create') }}" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_15px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 hover:bg-[#232a30] sm:ml-auto">
+        <a href="{{ route('hr.employees.create') }}" class="ml-auto inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
             Add Account
         </a>
         @if($search)
-            <a href="{{ route('hr.employees.index') }}" class="text-sm font-medium text-slate-500 hover:text-red-600">Clear</a>
+            <a href="{{ route('hr.employees.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:text-red-600">Clear</a>
         @endif
     </form>
 
@@ -26,42 +24,45 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(190px,0.52fr)] xl:items-start">
-        <div class="max-h-[calc(100vh-17rem)] overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
+    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(190px,0.52fr)] xl:items-stretch xl:h-[calc(100vh-13.5rem)]">
+        <div class="flex h-full min-h-0 flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
+            <div class="scroll-surface min-h-0 flex-1 overflow-y-auto">
             <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <thead class="sticky top-0 z-10 bg-[#f8f9fb] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-[inset_0_-1px_0_rgba(148,163,184,0.22)]">
                     <tr>
-                        <th class="px-5 py-3">Name</th>
-                        <th class="px-5 py-3">Role</th>
-                        <th class="px-5 py-3">Department</th>
-                        <th class="px-5 py-3">Email</th>
-                        <th class="px-5 py-3">Actions</th>
+                        <th class="px-5 py-3.5">Name</th>
+                        <th class="px-5 py-3.5">Role</th>
+                        <th class="px-5 py-3.5">Department</th>
+                        <th class="px-5 py-3.5">Email</th>
+                        <th class="px-5 py-3.5">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($employees as $employee)
-                        <tr>
-                            <td class="px-5 py-4 font-semibold text-slate-800">{{ $employee->name }}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-0.5 rounded text-xs
+                        <tr class="group transition-colors hover:bg-[#fffdf3]">
+                            <td class="px-5 py-3.5 font-semibold text-slate-800">{{ $employee->name }}</td>
+                            <td class="px-5 py-3.5">
+                                <span class="inline-flex rounded-full px-2.5 py-1.5 text-[0.7rem] font-semibold ring-1 ring-inset ring-black/[0.04]
                                     @if($employee->role === 'hr') bg-slate-200 text-slate-700
                                     @elseif($employee->role === 'manager') bg-[#f4c212]/25 text-slate-800
                                     @else bg-slate-100 text-slate-700 @endif">
                                     {{ $employee->role === 'hr' ? 'HR' : ucfirst($employee->role) }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-slate-600">{{ $employee->department->name ?? '—' }}</td>
-                            <td class="px-5 py-4 text-slate-600">{{ $employee->email }}</td>
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3">
+                            <td class="px-5 py-3.5 text-slate-600">{{ $employee->department->name ?? '—' }}</td>
+                            <td class="px-5 py-3.5 text-slate-600">{{ $employee->email }}</td>
+                            <td class="px-5 py-3.5">
+                                <div class="grid grid-cols-[2.5rem_2.5rem_auto] items-center gap-3 opacity-90 transition-opacity group-hover:opacity-100">
                                     @if($employee->role !== 'hr')
-                                        <a href="{{ route('hr.employees.show', $employee) }}" class="text-xs font-semibold text-slate-700 hover:underline">View</a>
+                                        <a href="{{ route('hr.employees.show', $employee) }}" class="w-10 text-xs font-semibold text-slate-700 transition hover:text-[#0d3b66] hover:underline">View</a>
+                                    @else
+                                        <span class="w-10" aria-hidden="true"></span>
                                     @endif
-                                    <a href="{{ route('hr.employees.edit', $employee) }}" class="text-xs font-semibold text-slate-700 hover:underline">Edit</a>
+                                    <a href="{{ route('hr.employees.edit', $employee) }}" class="w-10 text-xs font-semibold text-slate-700 transition hover:text-[#0d3b66] hover:underline">Edit</a>
                                     <form id="delete-form-{{ $employee->id }}" action="{{ route('hr.employees.destroy', $employee) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" onclick="openDeleteModal('{{ $employee->id }}', '{{ $employee->name }}')" class="rounded-lg bg-[#111111] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700">Delete</button>
+                                        <button type="button" onclick="openDeleteModal('{{ $employee->id }}', '{{ $employee->name }}')" class="inline-flex h-9 items-center rounded-lg bg-[#111111] px-3 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-md">Delete</button>
                                     </form>
                                 </div>
                             </td>
@@ -73,29 +74,30 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
-        <aside class="rounded-[20px] border border-slate-200 bg-[#f8f7f5] p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)]">
-            <div class="mb-3">
+        <aside class="flex h-full min-h-0 w-full flex-col self-stretch overflow-hidden rounded-[22px] border border-slate-200 bg-[#f8f7f5] p-2.5 shadow-[0_18px_38px_rgba(15,23,42,0.04)]">
+            <div class="mb-2 shrink-0">
                 <p class="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Setup Guide</p>
             </div>
 
-            <div class="space-y-3">
-                <div class="rounded-2xl bg-white p-3 shadow-sm">
+            <div class="scroll-surface flex flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+                <div class="flex-1 rounded-[16px] bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                     <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">Before creating</p>
                     <p class="mt-2 text-sm leading-5 text-slate-600">
                         Assign each account to the correct role and department so access, reporting, and approvals stay accurate.
                     </p>
                 </div>
 
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-3">
+                <div class="flex-1 rounded-[16px] border border-dashed border-slate-300 bg-white/70 p-3 shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
                     <p class="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">Best practice</p>
                     <p class="text-sm leading-5 text-slate-600">
                         Keep manager and employee records aligned with the department structure for cleaner performance tracking.
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-[#111111] p-3 text-white shadow-sm">
+                <div class="flex-1 rounded-[16px] bg-[#111111] p-3 text-white shadow-[0_12px_22px_rgba(17,17,17,0.18)]">
                     <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-300">Checklist</p>
                     <ul class="mt-2 space-y-2 text-sm text-slate-200">
                         <li>• Confirm role is correct</li>
@@ -107,9 +109,6 @@
         </aside>
     </div>
 
-    <div class="mt-4">
-        {{ $employees->links() }}
-    </div>
     <x-confirm-modal id="delete-modal" title="Remove Account" message="Are you sure you want to remove this account? This action cannot be undone." />
 
     <script>

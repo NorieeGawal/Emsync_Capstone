@@ -23,7 +23,7 @@ test('hr can view KPI management', function () {
     ]);
 
     $this->actingAs($hr)
-        ->get(route('hr.kpi.index'))
+        ->get(route('hr.kpi.index', ['period' => '2026-09']))
         ->assertOk()
         ->assertSee('KPI Management')
         ->assertSee('Edit KPI')
@@ -53,7 +53,7 @@ test('hr can mark a KPI notification as read', function () {
         ->assertSee('KPI scores incomplete');
 
     $this->post(route('notifications.read'), [
-        'notification_key' => 'kpi-incomplete-2026-09',
+        'notification_key' => 'kpi-incomplete-'.now()->format('Y-m'),
         'redirect_to' => route('hr.kpi.index'),
     ])->assertRedirect(route('hr.kpi.index'));
 
@@ -228,4 +228,120 @@ test('hr can update one employee KPI scores from the editor', function () {
 
     expect(KpiRecord::where('employee_id', $employee->id)->where('period', '2026-09')->count())->toBe(1);
     expect((float) KpiRecord::where('employee_id', $employee->id)->where('period', '2026-09')->first()->score)->toBe(97.0);
+});
+
+test('productivity score is calculated from completed workload and target', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $productivity = createManualKpiIndicator('Productivity');
+    $efficiency = createManualKpiIndicator('Efficiency');
+
+    $this->actingAs($hr)->post(route('hr.kpi.store', $employee), [
+        'period' => '2026-09',
+        'scores' => [$efficiency->id => 84],
+        'workload_target' => 20,
+        'workload_completed' => 18,
+    ])->assertRedirect(route('hr.kpi.index'));
+
+    $record = KpiRecord::where('employee_id', $employee->id)
+        ->where('kpi_indicator_id', $productivity->id)
+        ->where('period', '2026-09')
+        ->firstOrFail();
+
+    expect((float) $record->score)->toBe(90.0)
+        ->and($record->workload_target)->toBe(20)
+        ->and($record->workload_completed)->toBe(18)
+        ->and(KpiRecord::productivityScore(10, 12))->toBe(100.0);
+
+    $this->actingAs($hr)
+        ->get(route('hr.employees.show', [$employee, 'period' => '2026-09']))
+        ->assertOk()
+        ->assertSee('18 completed of 20 target');
+});
+
+test('individual and bulk KPI forms request workload counts instead of a productivity score', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $productivity = createManualKpiIndicator('Productivity');
+    createManualKpiIndicator('Efficiency');
+
+    $this->actingAs($hr)
+        ->get(route('hr.kpi.create', $employee))
+        ->assertOk()
+        ->assertSee('name="workload_target"', false)
+        ->assertSee('name="workload_completed"', false)
+        ->assertDontSee('name="scores['.$productivity->id.']"', false);
+
+    $this->get(route('hr.kpi.bulk'))
+        ->assertOk()
+        ->assertSee('data-indicator-name="Productivity"', false)
+        ->assertSee('name="workload_target['.$employee->id.']"', false)
+        ->assertSee('name="workload_completed['.$employee->id.']"', false);
+});
+
+test('productivity cannot be assigned a bulk score without workload details', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $productivity = createManualKpiIndicator('Productivity');
+
+    $this->actingAs($hr)->from(route('hr.kpi.bulk'))->post(route('hr.kpi.bulk.store'), [
+        'period' => '2026-09',
+        'employee_ids' => [$employee->id],
+        'kpi_indicator_id' => $productivity->id,
+        'score' => 90,
+    ])->assertRedirect(route('hr.kpi.bulk'))
+        ->assertSessionHasErrors(['workload_target', 'workload_completed']);
+
+    $this->assertDatabaseMissing('kpi_records', [
+        'employee_id' => $employee->id,
+        'kpi_indicator_id' => $productivity->id,
+        'period' => '2026-09',
+    ]);
+});
+
+test('bulk productivity calculates a separate score for each employee workload', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employeeOne = User::factory()->create(['role' => 'employee']);
+    $employeeTwo = User::factory()->create(['role' => 'employee']);
+    $productivity = createManualKpiIndicator('Productivity');
+
+    $this->actingAs($hr)->post(route('hr.kpi.bulk.store'), [
+        'period' => '2026-09',
+        'employee_ids' => [$employeeOne->id, $employeeTwo->id],
+        'kpi_indicator_id' => $productivity->id,
+        'workload_target' => [
+            $employeeOne->id => 20,
+            $employeeTwo->id => 10,
+        ],
+        'workload_completed' => [
+            $employeeOne->id => 18,
+            $employeeTwo->id => 5,
+        ],
+    ])->assertRedirect();
+
+    expect((float) KpiRecord::where('employee_id', $employeeOne->id)->where('period', '2026-09')->firstOrFail()->score)->toBe(90.0)
+        ->and((float) KpiRecord::where('employee_id', $employeeTwo->id)->where('period', '2026-09')->firstOrFail()->score)->toBe(50.0);
+});
+
+test('productivity workload requires a positive target', function () {
+    $hr = User::factory()->create(['role' => 'hr']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $productivity = createManualKpiIndicator('Productivity');
+    $efficiency = createManualKpiIndicator('Efficiency');
+
+    $this->actingAs($hr)->from(route('hr.kpi.create', $employee))
+        ->post(route('hr.kpi.store', $employee), [
+            'period' => '2026-09',
+            'scores' => [$efficiency->id => 84],
+            'workload_target' => 0,
+            'workload_completed' => 18,
+        ])
+        ->assertRedirect(route('hr.kpi.create', $employee))
+        ->assertSessionHasErrors('workload_target');
+
+    $this->assertDatabaseMissing('kpi_records', [
+        'employee_id' => $employee->id,
+        'kpi_indicator_id' => $productivity->id,
+        'period' => '2026-09',
+    ]);
 });

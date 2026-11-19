@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Employee Profile">
+<x-layouts.dashboard title="HR Employee Profile">
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Employee Profile</p>
@@ -23,6 +23,15 @@
             <div class="rounded-[16px] border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                 <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">{{ $name }}</p>
                 <p class="mt-1 text-2xl font-bold text-slate-800">{{ number_format($score, 0) }}%</p>
+                @if($name === 'Productivity')
+                    <p class="mt-1 text-xs text-slate-500">
+                        @if($productivityRecord?->workload_target)
+                            {{ number_format($productivityRecord->workload_completed) }} completed of {{ number_format($productivityRecord->workload_target) }} target
+                        @else
+                            Workload details not recorded
+                        @endif
+                    </p>
+                @endif
                 <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                     <div class="h-full rounded-full bg-[#f4c212]" style="width: {{ min($score, 100) }}%"></div>
                 </div>
@@ -84,8 +93,8 @@
                                     {{ ucfirst($log->status) }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3 text-slate-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}</td>
-                            <td class="px-5 py-3 text-slate-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('h:i A') : '—' }}</td>
+                            <td class="px-5 py-3 text-slate-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
+                            <td class="px-5 py-3 text-slate-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -112,7 +121,7 @@
             @forelse($notes as $note)
                 <div class="rounded-xl border-l-4 border-[#f4c212] bg-slate-50 px-4 py-3">
                     <p class="text-sm text-slate-800">{{ $note->note }}</p>
-                    <p class="mt-2 text-xs text-slate-500">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y g:i A') }}</p>
+                    <p class="mt-2 text-xs text-slate-500">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y H:i') }}</p>
                 </div>
             @empty
                 <p class="text-sm text-slate-400">No notes yet.</p>

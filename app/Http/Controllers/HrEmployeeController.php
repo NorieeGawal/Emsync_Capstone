@@ -17,8 +17,7 @@ class HrEmployeeController extends Controller
                 $query->where('name', 'like', "%{$search}%");
             })
             ->orderBy('role')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return view('hr.employees.index', compact('employees', 'search'));
     }

@@ -1,5 +1,5 @@
-<x-layouts.dashboard title="Add Employee">
-    <div class="mb-4 flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+<x-layouts.dashboard title="HR Add Employee">
+    <div class="mx-auto mb-4 flex max-w-6xl flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
         <div>
             <h3 class="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-800">Add Employee</h3>
             <p class="mt-1 text-sm text-slate-500">Create a new employee record.</p>
@@ -11,13 +11,13 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(220px,0.8fr)] xl:items-start">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(220px,0.8fr)] xl:items-start">
         <div class="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] sm:p-5">
             <form action="{{ route('hr.employees.store') }}" method="POST" class="space-y-3">
                 @csrf
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="mb-1 block text-sm font-semibold text-slate-700">Full Name</label>
                         <input
                             type="text"
@@ -29,7 +29,7 @@
                         @error('name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="mb-1 block text-sm font-semibold text-slate-700">Email</label>
                         <input
                             type="email"

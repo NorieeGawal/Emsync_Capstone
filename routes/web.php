@@ -9,9 +9,9 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'role:hr'])->prefix('hr')->name('hr.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:hr', 'prevent-back-history'])->prefix('hr')->name('hr.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HrDashboardController::class, 'index'])->name('dashboard');
     Route::resource('employees', App\Http\Controllers\HrEmployeeController::class)->parameters(['employees' => 'employee'])->except(['show']);
     Route::get('/kpi', [App\Http\Controllers\HrKpiController::class, 'index'])->name('kpi.index');
@@ -35,7 +35,7 @@ Route::middleware(['auth', 'verified', 'role:hr'])->prefix('hr')->name('hr.')->g
     Route::delete('/departments/{department}', [App\Http\Controllers\HrDepartmentController::class, 'destroy'])->name('departments.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:manager', 'prevent-back-history'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ManagerDashboardController::class, 'index'])->name('dashboard');
     Route::get('/employees', [App\Http\Controllers\ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}/profile', [App\Http\Controllers\ManagerEmployeeController::class, 'show'])->name('employees.show');
@@ -44,10 +44,10 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::post('/kpi/bulk', [App\Http\Controllers\HrKpiController::class, 'storeBulk'])->name('kpi.bulk.store');
 });
 
-Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:employee', 'prevent-back-history'])->group(function () {
     Route::get('/employee/dashboard', [App\Http\Controllers\EmployeeDashboardController::class, 'index'])->name('employee.dashboard');
 });
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'prevent-back-history'])->group(function () {
     Route::post('/notifications/read', [App\Http\Controllers\DashboardNotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [App\Http\Controllers\DashboardNotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

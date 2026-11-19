@@ -12,9 +12,24 @@ class KpiRecord extends Model
         'kpi_indicator_id',
         'period',
         'score',
+        'workload_target',
+        'workload_completed',
         'encoded_by',
         'remarks',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'workload_target' => 'integer',
+            'workload_completed' => 'integer',
+        ];
+    }
+
+    public static function productivityScore(int $target, int $completed): float
+    {
+        return round(min(($completed / $target) * 100, 100), 2);
+    }
 
     public function employee(): BelongsTo
     {

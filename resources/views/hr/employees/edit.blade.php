@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Edit Employee">
+<x-layouts.dashboard title="HR Edit Employee">
     <div class="mb-4 flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
         <div>
             <p class="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Workforce Directory</p>

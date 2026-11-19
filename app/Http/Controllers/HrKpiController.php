@@ -13,12 +13,16 @@ class HrKpiController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $role = $request->query('role');
         $period = $request->query('period', now()->format('Y-m'));
 
         $employees = User::whereIn('role', ['employee', 'manager'])
             ->with('department')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
+            })
+            ->when($role, function ($query, $role) {
+                $query->where('role', $role);
             })
             ->get();
         $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
@@ -30,7 +34,7 @@ class HrKpiController extends Controller
             ->get()
             ->groupBy('employee_id');
 
-        return view('hr.kpi.index', compact('employees', 'search', 'period', 'indicators', 'records'));
+        return view('hr.kpi.index', compact('employees', 'search', 'role', 'period', 'indicators', 'records'));
     }
 
     public function create(User $employee)
@@ -67,7 +71,7 @@ class HrKpiController extends Controller
             ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->get();
-        $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->orderBy('name')->get();
+        $indicators = KpiIndicator::whereIn('name', $this->bulkIndicatorNames())->orderBy('name')->get();
 
         return view('hr.kpi.bulk', compact('departments', 'departmentId', 'search', 'employees', 'indicators'));
     }
@@ -79,12 +83,39 @@ class HrKpiController extends Controller
             'employee_ids' => ['required', 'array', 'min:1'],
             'employee_ids.*' => ['integer', 'distinct', 'exists:users,id'],
             'kpi_indicator_id' => ['required', 'integer', 'exists:kpi_indicators,id'],
-            'score' => ['required', 'numeric', 'min:0', 'max:100'],
             'remarks' => ['nullable', 'string'],
         ]);
 
         $indicator = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
-            ->findOrFail($validated['kpi_indicator_id']);
+            ->find($validated['kpi_indicator_id']);
+        abort_if(! $indicator, 422, 'One or more selected KPIs are invalid.');
+
+        if ($indicator->name === 'Productivity') {
+            $workload = $request->validate([
+                'workload_target' => ['required', 'array'],
+                'workload_target.*' => ['required', 'integer', 'min:1', 'max:2147483647'],
+                'workload_completed' => ['required', 'array'],
+                'workload_completed.*' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            ]);
+
+            $selectedEmployeeIds = array_map('intval', $validated['employee_ids']);
+            $targetEmployeeIds = array_map('intval', array_keys($workload['workload_target']));
+            $completedEmployeeIds = array_map('intval', array_keys($workload['workload_completed']));
+            sort($selectedEmployeeIds);
+            sort($targetEmployeeIds);
+            sort($completedEmployeeIds);
+
+            abort_if(
+                $selectedEmployeeIds !== $targetEmployeeIds || $selectedEmployeeIds !== $completedEmployeeIds,
+                422,
+                'Enter a workload target and completed count for every selected employee.'
+            );
+        } else {
+            $validated += $request->validate([
+                'score' => ['required', 'numeric', 'min:0', 'max:100'],
+            ]);
+        }
+
         $employeeIds = User::whereIn('role', ['employee', 'manager'])
             ->whereIn('id', $validated['employee_ids'])
             ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
@@ -93,37 +124,75 @@ class HrKpiController extends Controller
         abort_if($employeeIds->count() !== count($validated['employee_ids']), 422, 'One or more selected users cannot receive KPI scores.');
 
         foreach ($employeeIds as $employeeId) {
+            $recordValues = $indicator->name === 'Productivity'
+                ? [
+                    'score' => KpiRecord::productivityScore(
+                        (int) $workload['workload_target'][$employeeId],
+                        (int) $workload['workload_completed'][$employeeId]
+                    ),
+                    'workload_target' => $workload['workload_target'][$employeeId],
+                    'workload_completed' => $workload['workload_completed'][$employeeId],
+                    'encoded_by' => auth()->id(),
+                    'remarks' => $validated['remarks'] ?? null,
+                ]
+                : [
+                    'score' => $validated['score'],
+                    'encoded_by' => auth()->id(),
+                    'remarks' => $validated['remarks'] ?? null,
+                ];
+
             KpiRecord::updateOrCreate(
                 [
                     'employee_id' => $employeeId,
                     'kpi_indicator_id' => $indicator->id,
                     'period' => $validated['period'],
                 ],
-                [
-                    'score' => $validated['score'],
-                    'encoded_by' => auth()->id(),
-                    'remarks' => $validated['remarks'] ?? null,
-                ]
+                $recordValues
             );
         }
 
-        return redirect()->back()->with('success', "{$employeeIds->count()} KPI score(s) saved for {$indicator->name}.");
+        $savedMessage = $indicator->name === 'Productivity'
+            ? "{$employeeIds->count()} productivity workload record(s) saved."
+            : "{$employeeIds->count()} KPI score(s) saved for {$indicator->name}.";
+
+        return redirect()->back()->with('success', $savedMessage);
     }
 
     public function store(Request $request, User $employee)
     {
-        $validated = $request->validate([
+        $manualIndicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->get();
+        $productivityIndicator = $manualIndicators->firstWhere('name', 'Productivity');
+        $scoredIndicators = $manualIndicators->reject(fn ($indicator) => $indicator->name === 'Productivity');
+
+        $rules = [
             'period' => ['required', 'date_format:Y-m'],
             'scores' => ['required', 'array'],
-            'scores.*' => ['required', 'numeric', 'min:0', 'max:100'],
             'remarks' => ['nullable', 'string'],
-        ]);
+        ];
 
-        $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
-            ->whereIn('id', array_keys($validated['scores']))
-            ->pluck('id');
+        foreach ($scoredIndicators as $indicator) {
+            $rules["scores.{$indicator->id}"] = ['required', 'numeric', 'min:0', 'max:100'];
+        }
 
-        abort_if($indicators->count() !== count($validated['scores']), 422, 'One or more selected KPIs are invalid.');
+        if ($productivityIndicator) {
+            $rules += [
+                'workload_target' => ['required', 'integer', 'min:1', 'max:2147483647'],
+                'workload_completed' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            ];
+        }
+
+        $validated = $request->validate($rules);
+
+        $expectedScoreIds = $scoredIndicators->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $providedScoreIds = array_map('intval', array_keys($validated['scores']));
+
+        abort_if(
+            count($providedScoreIds) !== count($expectedScoreIds)
+                || array_diff($providedScoreIds, $expectedScoreIds)
+                || array_diff($expectedScoreIds, $providedScoreIds),
+            422,
+            'One or more selected KPIs are invalid.'
+        );
 
         foreach ($validated['scores'] as $indicatorId => $score) {
             KpiRecord::updateOrCreate(
@@ -140,7 +209,32 @@ class HrKpiController extends Controller
             );
         }
 
+        if ($productivityIndicator) {
+            $target = (int) $validated['workload_target'];
+            $completed = (int) $validated['workload_completed'];
+
+            KpiRecord::updateOrCreate(
+                [
+                    'employee_id' => $employee->id,
+                    'kpi_indicator_id' => $productivityIndicator->id,
+                    'period' => $validated['period'],
+                ],
+                [
+                    'score' => KpiRecord::productivityScore($target, $completed),
+                    'workload_target' => $target,
+                    'workload_completed' => $completed,
+                    'encoded_by' => auth()->id(),
+                    'remarks' => $validated['remarks'] ?? null,
+                ]
+            );
+        }
+
         return redirect()->route('hr.kpi.index')->with('success', "KPI scores saved for {$employee->name}.");
+    }
+
+    private function bulkIndicatorNames(): array
+    {
+        return $this->manualIndicatorNames();
     }
 
     private function manualIndicatorNames(): array

@@ -1,23 +1,35 @@
-<x-layouts.dashboard title="KPI Management">
+<x-layouts.dashboard title="HR KPI Management" header-subtitle="Select an employee or manager to encode individual scores, or use bulk entry.">
     <div x-data="{ modalEmployee: null }" @keydown.escape.window="modalEmployee = null">
-    <div class="mb-6">
-        <div>
-            <p class="mt-1 text-sm text-slate-600">Select an employee or manager to encode individual scores, or use bulk entry.</p>
-        </div>
-    </div>
 
-    <form method="GET" action="{{ route('hr.kpi.index') }}" class="mb-5 flex flex-wrap items-center gap-3">
-        <div class="relative max-w-sm">
-            <input type="text" name="search" value="{{ $search }}" placeholder="Search by name..." class="w-full rounded-xl border-slate-300 bg-slate-50 py-2 pl-4 pr-10 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">
+    <form method="GET" action="{{ route('hr.kpi.index') }}" class="mb-6 flex flex-wrap items-center gap-3 rounded-[22px] border border-slate-200 bg-white/80 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
+        <div class="relative w-full max-w-sm">
+            <input type="text" name="search" value="{{ $search }}" placeholder="Search by name..." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 py-2 pl-4 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
             <button type="submit" aria-label="Search employees" class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
                 &#128269;
             </button>
         </div>
-        <a href="{{ route('hr.kpi.bulk') }}" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_15px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 hover:bg-[#232a30] sm:ml-auto">
+
+        <div class="relative min-w-[150px]">
+            <label for="roleFilter" class="sr-only">Filter by role</label>
+            <select id="roleFilter" name="role" class="h-11 w-full appearance-none rounded-xl border border-slate-300 bg-slate-50 px-3 pr-9 text-sm text-slate-700 shadow-sm transition focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
+                <option value="">All roles</option>
+                <option value="employee" {{ $role === 'employee' ? 'selected' : '' }}>Employee</option>
+                <option value="manager" {{ $role === 'manager' ? 'selected' : '' }}>Manager</option>
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path></svg>
+            </span>
+        </div>
+
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
+            Apply
+        </button>
+
+        <a href="{{ route('hr.kpi.bulk') }}" class="ml-auto inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
             Bulk Entry
         </a>
-        @if($search)
-            <a href="{{ route('hr.kpi.index') }}" class="text-sm font-medium text-slate-500 hover:text-red-600">Clear</a>
+        @if($search || $role)
+            <a href="{{ route('hr.kpi.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:text-red-600">Clear</a>
         @endif
     </form>
 
@@ -27,34 +39,35 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(190px,0.52fr)] xl:items-start">
-        <div class="max-h-[calc(100vh-18rem)] overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
+    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_250px] xl:items-stretch xl:h-[calc(100vh-13.5rem)]">
+        <div class="flex h-full min-h-0 flex-col self-stretch overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
+            <div class="scroll-surface flex-1 overflow-y-auto">
             <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <thead class="sticky top-0 z-10 bg-[#f8f9fb] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-[inset_0_-1px_0_rgba(148,163,184,0.22)]">
                     <tr>
-                        <th class="px-5 py-3">Name</th>
-                        <th class="px-5 py-3">Role</th>
-                        <th class="px-5 py-3">Department</th>
-                        <th class="px-5 py-3">Actions</th>
+                        <th class="px-5 py-3.5">Name</th>
+                        <th class="px-5 py-3.5">Role</th>
+                        <th class="px-5 py-3.5">Department</th>
+                        <th class="px-5 py-3.5">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($employees as $employee)
-                        <tr>
-                            <td class="px-5 py-4 font-semibold text-slate-800">{{ $employee->name }}</td>
-                            <td class="px-5 py-4">
-                                <span class="rounded-full px-2.5 py-1 text-[0.68rem] font-medium
+                        <tr class="group transition-colors hover:bg-[#fffdf3]">
+                            <td class="px-5 py-3.5 font-semibold text-slate-800">{{ $employee->name }}</td>
+                            <td class="px-5 py-3.5">
+                                <span class="inline-flex rounded-full px-2.5 py-1.5 text-[0.7rem] font-semibold ring-1 ring-inset ring-black/[0.04]
                                     @if($employee->role === 'manager') bg-[#f4c212]/20 text-slate-800
                                     @elseif($employee->role === 'hr') bg-slate-200 text-slate-700
                                     @else bg-slate-100 text-slate-700 @endif">
                                     {{ ucfirst($employee->role) }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-slate-600">{{ $employee->department->name ?? '—' }}</td>
-                            <td class="px-5 py-4">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <a href="{{ route('hr.kpi.create', $employee) }}" class="inline-flex items-center rounded-lg bg-[#111111] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">Encode</a>
-                                    <button type="button" @click="modalEmployee = {{ $employee->id }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#f4c212] hover:bg-[#fff9df]">Edit KPI</button>
+                            <td class="px-5 py-3.5 text-slate-600">{{ $employee->department->name ?? '—' }}</td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex flex-wrap items-center gap-2 opacity-90 transition-opacity group-hover:opacity-100">
+                                    <a href="{{ route('hr.kpi.create', $employee) }}" class="inline-flex h-9 items-center rounded-lg bg-[#111111] px-3.5 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-700 hover:shadow-md">Encode</a>
+                                    <button type="button" @click="modalEmployee = {{ $employee->id }}" class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-[#f4c212] hover:bg-[#fff9df] hover:shadow-md">Edit KPI</button>
                                 </div>
                             </td>
                         </tr>
@@ -65,34 +78,35 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
-        <aside class="rounded-[20px] border border-slate-200 bg-[#f8f7f5] p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)]">
-            <div class="mb-3">
+        <aside class="flex h-full min-h-0 w-full flex-col self-stretch overflow-hidden rounded-[22px] border border-slate-200 bg-[#f8f7f5] p-2.5 shadow-[0_18px_38px_rgba(15,23,42,0.04)]">
+            <div class="mb-2 shrink-0">
                 <p class="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Setup Guide</p>
             </div>
 
-            <div class="space-y-3">
-                <div class="rounded-2xl bg-white p-3 shadow-sm">
+            <div class="scroll-surface flex flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+                <div class="flex-1 rounded-[16px] bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                     <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">Before scoring</p>
                     <p class="mt-2 text-sm leading-5 text-slate-600">
                         Confirm the department, role, and review period before encoding performance values.
                     </p>
                 </div>
 
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-3">
+                <div class="flex-1 rounded-[16px] border border-dashed border-slate-300 bg-white/70 p-3 shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
                     <p class="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">Best practice</p>
                     <p class="text-sm leading-5 text-slate-600">
                         Keep monthly KPIs consistent so reviews remain comparable across teams and departments.
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-[#111111] p-3 text-white shadow-sm">
+                <div class="flex-1 rounded-[16px] bg-[#111111] p-3 text-white shadow-[0_12px_22px_rgba(17,17,17,0.2)]">
                     <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-300">Checklist</p>
                     <ul class="mt-2 space-y-2 text-sm text-slate-200">
                         <li>• Correct employee selected</li>
                         <li>• Review period verified</li>
-                        <li>• Score entered before save</li>
+                        <li>• Target and completed workload recorded</li>
                     </ul>
                 </div>
             </div>
@@ -126,10 +140,29 @@
 
                     <div class="space-y-2.5">
                         @foreach($indicators as $indicator)
-                            <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                                <label for="modal-score-{{ $employee->id }}-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
-                                <input id="modal-score-{{ $employee->id }}-{{ $indicator->id }}" type="number" step="0.01" min="0" max="100" name="scores[{{ $indicator->id }}]" value="{{ $employeeRecords->get($indicator->id)?->score }}" placeholder="0-100" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
-                            </div>
+                            @if($indicator->name === 'Productivity')
+                                <fieldset class="rounded-xl border border-slate-200 bg-white p-3">
+                                    <legend class="px-1 text-sm font-semibold text-slate-700">Productivity workload</legend>
+                                    <p class="mb-3 text-xs leading-5 text-slate-500">Completed ÷ target × 100, capped at 100%. Example: 18 of 20 = 90%.</p>
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label for="modal-workload-target-{{ $employee->id }}" class="mb-1.5 block text-xs font-medium text-slate-600">Target workload</label>
+                                            <input id="modal-workload-target-{{ $employee->id }}" type="number" min="1" step="1" name="workload_target" value="{{ $employeeRecords->get($indicator->id)?->workload_target }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                            @error('workload_target') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label for="modal-workload-completed-{{ $employee->id }}" class="mb-1.5 block text-xs font-medium text-slate-600">Completed workload</label>
+                                            <input id="modal-workload-completed-{{ $employee->id }}" type="number" min="0" step="1" name="workload_completed" value="{{ $employeeRecords->get($indicator->id)?->workload_completed }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                            @error('workload_completed') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            @else
+                                <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                    <label for="modal-score-{{ $employee->id }}-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
+                                    <input id="modal-score-{{ $employee->id }}-{{ $indicator->id }}" type="number" step="0.01" min="0" max="100" name="scores[{{ $indicator->id }}]" value="{{ $employeeRecords->get($indicator->id)?->score }}" placeholder="0-100" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                </div>
+                            @endif
                         @endforeach
                     </div>
 

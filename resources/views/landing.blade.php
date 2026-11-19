@@ -13,9 +13,9 @@
         <header class="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <nav class="flex items-center justify-between rounded-full border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm shadow-[0_0_30px_rgba(0,0,0,0.2)]">
                 <div class="flex items-center gap-3">
-                    <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="w-[56px] h-auto" />
+                    <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="brand-logo h-auto w-[56px]" />
                     <div class="leading-none">
-                        <p class="text-lg font-black tracking-[0.18em] text-[#F4C212]">{{ strtoupper(config('branding.company_name', 'Tempco')) }}</p>
+                        <p class="text-lg font-black tracking-[0.18em]" style="color: {{ config('branding.primary_color', '#D9A400') }};">{{ strtoupper(config('branding.company_name', 'Tempco')) }}</p>
                         <p class="mt-1 text-[0.5rem] font-semibold uppercase tracking-[0.24em] text-white/70">Tuna Exporters Multi-Purpose Cooperative</p>
                     </div>
                 </div>

@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Log In — {{ config('branding.company_name', 'EMSYNC') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .login-brand-logo {
+            filter: brightness(0);
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-[#0a0d0f] font-sans text-slate-900 antialiased">
     <div class="relative flex min-h-screen items-center justify-center overflow-hidden p-4 sm:p-8 lg:p-10">
@@ -18,7 +23,7 @@
                     <div class="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-[#0a0d0f]/10 blur-3xl"></div>
 
                     <div class="relative flex items-center gap-3 pt-1">
-                        <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="h-auto w-[64px] drop-shadow-sm animate-float" />
+                        <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="brand-logo login-brand-logo h-auto w-[64px] drop-shadow-sm animate-float" />
                         <div class="leading-none">
                             <p class="text-[1.85rem] font-extrabold tracking-[-0.03em] text-[#0d1116]">{{ strtoupper(config('branding.company_name', 'Tempco')) }}</p>
                             <p class="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-black/70">Tuna Exporters Multi-Purpose Cooperative</p>

@@ -1,10 +1,7 @@
-<x-layouts.dashboard title="My Team">
-    <div class="mb-6">
-        <h3 class="text-xl font-semibold text-gray-800">My Team</h3>
-        <p class="text-gray-500 text-sm">Employees in your department.</p>
-    </div>
+<x-layouts.dashboard title="Manager Team" header-subtitle="Employees in your department.">
 
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="min-h-0 flex-1 overflow-y-auto">
         <table class="w-full text-left text-sm">
             <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
@@ -29,9 +26,11 @@
                 @endforelse
             </tbody>
         </table>
-    </div>
-
-    <div class="mt-4">
-        {{ $employees->links() }}
+        </div>
+        @if($employees->hasPages())
+            <div class="shrink-0 border-t border-gray-100 px-4 py-3 sm:px-6">
+                {{ $employees->links() }}
+            </div>
+        @endif
     </div>
 </x-layouts.dashboard>

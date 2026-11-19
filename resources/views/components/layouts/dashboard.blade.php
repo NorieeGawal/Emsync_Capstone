@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('branding.company_name', 'EMSYNC') }} — {{ $title ?? 'Dashboard' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
     <style>
+        .dashboard-brand-logo {
+            filter: brightness(0);
+        }
+
         [x-cloak] { display: none !important; }
 
         @keyframes fadeInUp {
@@ -24,11 +35,11 @@
     </style>
 </head>
 <body class="bg-[#f3f0ea] font-sans antialiased text-slate-800">
-    <div x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false" class="flex min-h-screen">
+    <div x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false" class="flex {{ request()->routeIs('hr.kpi.bulk', 'manager.kpi.bulk') ? 'min-h-screen xl:h-screen xl:overflow-hidden' : 'min-h-screen' }}">
         <aside :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-40 flex h-screen w-[min(86vw,300px)] shrink-0 -translate-x-full flex-col overflow-y-auto bg-[#f4c212] text-[#111111] shadow-[0_12px_25px_rgba(0,0,0,0.12)] transition-transform duration-300 md:sticky md:top-0 md:z-auto md:w-[240px] md:translate-x-0 md:overflow-hidden xl:w-[250px]">
             <div class="flex items-center justify-between px-5 pb-5 pt-5 md:pt-6">
                 <div class="flex items-center gap-3">
-                    <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="h-[72px] w-[72px] object-contain bg-transparent p-0 shadow-none" />
+                    <img src="{{ asset(config('branding.logo_path', '/images/emsync_logo.png')) }}" alt="{{ config('branding.company_name', 'Tempco') }} Logo" class="brand-logo dashboard-brand-logo h-[72px] w-[72px] object-contain bg-transparent p-0 shadow-none" />
                     <div class="leading-none">
                         <h1 class="text-[2rem] font-extrabold tracking-[-0.04em] text-[#111111]">Tempco</h1>
                         <p class="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[#111111]/75">Tuna Exporters Multi-Purpose Cooperative</p>
@@ -121,7 +132,7 @@
             <div class="mt-auto space-y-2 border-t border-black/10 p-4">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl bg-[#111111] px-4 py-3 text-left text-[1.02rem] font-medium text-white transition hover:bg-[#2b2b2b] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#f4c212]">
+                    <button type="submit" class="flex w-full items-center justify-center rounded-xl bg-[#111111] px-4 py-3 text-center text-[1.02rem] font-medium text-white transition hover:bg-[#2b2b2b] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#f4c212]">
                         Log out
                     </button>
                 </form>
@@ -130,8 +141,8 @@
 
         <div x-cloak x-show="mobileMenuOpen" x-transition.opacity @click="mobileMenuOpen = false" class="pointer-events-auto fixed inset-0 z-30 bg-black/40 md:hidden" aria-hidden="true"></div>
 
-        <div class="flex min-w-0 flex-1 flex-col bg-[#eceae6]">
-            <header class="relative z-50 border-b border-slate-200 bg-[#f8f7f5] px-4 py-1.5 shadow-[0_8px_20px_rgba(15,23,42,0.03)] sm:px-6 sm:py-1.5">
+        <div class="flex min-w-0 flex-1 flex-col bg-[#eceae6] {{ request()->routeIs('manager.employees.index', 'manager.dashboard') ? 'h-screen min-h-0' : '' }}">
+            <header class="sticky top-0 z-50 border-b border-slate-200 bg-[#f8f7f5] px-4 py-1.5 shadow-[0_8px_20px_rgba(15,23,42,0.03)] sm:px-6 sm:py-1.5">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex min-w-0 flex-1 items-center gap-3">
                         <button type="button" @click.stop="mobileMenuOpen = true" aria-label="Open navigation menu" class="relative z-50 flex h-9 w-9 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#f4c212] focus:ring-offset-2 md:hidden">
@@ -141,6 +152,21 @@
                                 <span class="h-0.5 w-5 rounded-full bg-current"></span>
                             </span>
                         </button>
+                        <div class="min-w-0">
+                            @php
+                                $pageTitle = $headerTitle ?? $title ?? null;
+                                $pageSubtitle = $headerSubtitle ?? $subtitle ?? null;
+                            @endphp
+                            @if(request()->routeIs('hr.kpi.bulk', 'manager.kpi.bulk'))
+                                <h2 class="truncate text-lg font-semibold text-slate-800">Bulk KPI Entry</h2>
+                                <p class="truncate text-xs text-slate-500">Apply one score to multiple employees in a single review cycle.</p>
+                            @elseif(!empty($pageTitle))
+                                <h3 class="truncate text-lg font-semibold text-slate-800">{{ $pageTitle }}</h3>
+                            @endif
+                            @if(!request()->routeIs('hr.kpi.bulk', 'manager.kpi.bulk') && !empty($pageSubtitle))
+                                <p class="truncate text-xs text-slate-500">{{ $pageSubtitle }}</p>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-2 self-end sm:gap-3 sm:self-auto">
@@ -236,7 +262,7 @@
                 </div>
             </header>
 
-            <main class="dashboard-shell min-w-0 flex-1 p-3 sm:p-5 lg:p-7">
+            <main class="dashboard-shell min-w-0 flex-1 p-3 sm:p-5 lg:p-7 {{ request()->routeIs('manager.employees.index', 'manager.dashboard') ? 'flex min-h-0 flex-col overflow-hidden' : '' }} {{ request()->routeIs('hr.kpi.bulk', 'manager.kpi.bulk') ? 'xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden' : '' }}">
                 {{ $slot }}
             </main>
         </div>

@@ -15,6 +15,7 @@ class HrReportController extends Controller
         $period = $request->query('period', Carbon::now()->format('Y-m'));
 
         $scores = $employee->kpiScoresForPeriod($period);
+        $productivityRecord = $employee->productivityRecordForPeriod($period);
         $overallScore = $employee->overallScore($period);
         $notes = $employee->performanceNotes()->with('author')->latest()->take(5)->get();
 
@@ -27,7 +28,7 @@ class HrReportController extends Controller
         }
 
         $pdf = Pdf::loadView('hr.reports.employee', compact(
-            'employee', 'period', 'scores', 'overallScore', 'notes',
+            'employee', 'period', 'scores', 'productivityRecord', 'overallScore', 'notes',
             'trendLabels', 'trendScores'
         ));
 

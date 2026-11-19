@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Edit KPI Scores">
+<x-layouts.dashboard title="HR Edit KPI Scores">
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-500">KPI Management</p>
@@ -8,7 +8,7 @@
         <a href="{{ route('hr.kpi.index') }}" class="text-sm font-medium text-blue-700 hover:text-blue-800">Back to KPI management</a>
     </div>
 
-    <div class="grid max-w-[64rem] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_15rem]">
+    <div class="mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_15rem]">
         <div class="rounded-[14px] border border-[#d9d4cd] bg-[#f4f1ec] shadow-[0_2px_0_rgba(17,17,17,0.02)]">
             <div class="flex flex-col gap-3 border-b border-slate-300 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-3">
@@ -32,13 +32,32 @@
 
                     <div class="space-y-3">
                         @foreach($indicators as $indicator)
-                            <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                                <label for="score-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
-                                <div>
-                                    <input id="score-{{ $indicator->id }}" type="number" step="0.01" min="0" max="100" name="scores[{{ $indicator->id }}]" value="{{ old('scores.' . $indicator->id, $records->get($indicator->id)?->score) }}" placeholder="0-100" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
-                                    @error('scores.' . $indicator->id) <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
+                            @if($indicator->name === 'Productivity')
+                                <fieldset class="rounded-xl border border-slate-200 bg-white p-3">
+                                    <legend class="px-1 text-sm font-semibold text-slate-700">Productivity workload</legend>
+                                    <p class="mb-3 text-xs leading-5 text-slate-500">Completed ÷ target × 100, capped at 100%. Example: 18 of 20 = 90%.</p>
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label for="workload-target" class="mb-1.5 block text-xs font-medium text-slate-600">Target workload</label>
+                                            <input id="workload-target" type="number" min="1" step="1" name="workload_target" value="{{ old('workload_target', $records->get($indicator->id)?->workload_target) }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                            @error('workload_target') <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label for="workload-completed" class="mb-1.5 block text-xs font-medium text-slate-600">Completed workload</label>
+                                            <input id="workload-completed" type="number" min="0" step="1" name="workload_completed" value="{{ old('workload_completed', $records->get($indicator->id)?->workload_completed) }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                            @error('workload_completed') <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            @else
+                                <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                    <label for="score-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
+                                    <div>
+                                        <input id="score-{{ $indicator->id }}" type="number" step="0.01" min="0" max="100" name="scores[{{ $indicator->id }}]" value="{{ old('scores.' . $indicator->id, $records->get($indicator->id)?->score) }}" placeholder="0-100" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
+                                        @error('scores.' . $indicator->id) <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @endforeach
                     </div>
 

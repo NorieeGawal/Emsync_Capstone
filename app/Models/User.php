@@ -48,6 +48,14 @@ class User extends Authenticatable
         return $this->hasMany(KpiRecord::class, 'employee_id');
     }
 
+    public function productivityRecordForPeriod(string $period): ?KpiRecord
+    {
+        return $this->kpiRecords()
+            ->where('period', $period)
+            ->whereHas('kpiIndicator', fn ($query) => $query->where('name', 'Productivity'))
+            ->first();
+    }
+
     public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class, 'employee_id');

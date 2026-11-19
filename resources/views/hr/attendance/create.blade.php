@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Log Attendance">
+<x-layouts.dashboard title="HR Log Attendance">
     <div class="mb-6">
         <h3 class="text-xl font-semibold text-gray-800">Log Attendance</h3>
         <p class="text-gray-500 text-sm">{{ $employee->name }} — {{ $employee->department->name ?? 'No department' }}</p>
@@ -14,7 +14,7 @@
         <!-- Entry form -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h4 class="font-semibold text-gray-800 mb-4">Add / Update Daily Log</h4>
-            <p class="mb-4 text-xs text-gray-500">Scheduled: {{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('h:i A') }} in, {{ \Carbon\Carbon::parse($settings->scheduled_time_out)->format('h:i A') }} out. A later check-in is marked late.</p>
+            <p class="mb-4 text-xs text-gray-500">Use 24-hour time (HH:MM). Scheduled: {{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('H:i') }} in, {{ \Carbon\Carbon::parse($settings->scheduled_time_out)->format('H:i') }} out. A later check-in is marked late.</p>
             <form action="{{ route('hr.attendance.store', $employee) }}" method="POST">
                 @csrf
 
@@ -37,11 +37,13 @@
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time In</label>
-                        <input type="time" name="time_in" value="{{ old('time_in') }}" class="w-full border-gray-300 rounded-md text-sm">
+                        <input type="text" name="time_in" value="{{ old('time_in') }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="w-full rounded-md border-gray-300 text-sm">
+                        @error('time_in') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time Out</label>
-                        <input type="time" name="time_out" value="{{ old('time_out') }}" class="w-full border-gray-300 rounded-md text-sm">
+                        <input type="text" name="time_out" value="{{ old('time_out') }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="w-full rounded-md border-gray-300 text-sm">
+                        @error('time_out') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -79,8 +81,8 @@
                                     {{ ucfirst($log->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('h:i A') : '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>
                         </tr>
                     @empty
                         <tr>

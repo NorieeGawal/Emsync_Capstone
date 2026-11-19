@@ -32,11 +32,12 @@ class ManagerEmployeeController extends Controller
         $period = $request->query('period', Carbon::now()->format('Y-m'));
 
         $scores = $employee->kpiScoresForPeriod($period);
+        $productivityRecord = $employee->productivityRecordForPeriod($period);
         $overallScore = $employee->overallScore($period);
         $recentLogs = $employee->attendanceLogs()->orderBy('date', 'desc')->take(5)->get();
         $notes = $employee->performanceNotes()->with('author')->latest()->get();
 
-        return view('manager.employees.show', compact('employee', 'period', 'scores', 'overallScore', 'recentLogs', 'notes'));
+        return view('manager.employees.show', compact('employee', 'period', 'scores', 'productivityRecord', 'overallScore', 'recentLogs', 'notes'));
     }
 
     public function storeNote(Request $request, User $employee)

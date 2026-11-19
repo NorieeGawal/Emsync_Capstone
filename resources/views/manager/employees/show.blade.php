@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="Employee Profile">
+<x-layouts.dashboard title="Manager Employee Profile">
     <div class="mb-6 flex justify-between items-start">
         <div>
             <h3 class="text-xl font-semibold text-gray-800">{{ $employee->name }}</h3>
@@ -19,6 +19,15 @@
             <div class="bg-white rounded-lg shadow-sm p-4">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">{{ $name }}</p>
                 <p class="text-2xl font-bold text-blue-900 mt-1">{{ number_format($score, 0) }}%</p>
+                @if($name === 'Productivity')
+                    <p class="mt-1 text-xs text-gray-500">
+                        @if($productivityRecord?->workload_target)
+                            {{ number_format($productivityRecord->workload_completed) }} completed of {{ number_format($productivityRecord->workload_target) }} target
+                        @else
+                            Workload details not recorded
+                        @endif
+                    </p>
+                @endif
                 <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2">
                     <div class="bg-blue-700 h-1.5 rounded-full" style="width: {{ min($score, 100) }}%"></div>
                 </div>
@@ -80,8 +89,8 @@
                                     {{ ucfirst($log->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('h:i A') : '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -108,7 +117,7 @@
             @forelse($notes as $note)
                 <div class="border-l-4 border-blue-700 bg-gray-50 px-4 py-3 rounded">
                     <p class="text-sm text-gray-800">{{ $note->note }}</p>
-                    <p class="text-xs text-gray-500 mt-2">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y g:i A') }}</p>
+                    <p class="text-xs text-gray-500 mt-2">— {{ $note->author->name }} ({{ ucfirst($note->author->role) }}), {{ $note->created_at->format('M d, Y H:i') }}</p>
                 </div>
             @empty
                 <p class="text-sm text-gray-400">No feedback yet.</p>

@@ -1,10 +1,5 @@
-<x-layouts.dashboard title="Profile">
-    <div class="mb-4">
-        <h3 class="text-xl font-bold tracking-[-0.03em] text-slate-800">Profile</h3>
-        <p class="mt-1 text-sm text-slate-600">Manage your personal information, photo, and password.</p>
-    </div>
-
-    <div class="grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-2">
+<x-layouts.dashboard title="Profile" header-subtitle="Manage your personal information, photo, and password.">
+    <div class="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
         <div class="rounded-[16px] border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
             @include('profile.partials.update-profile-information-form')
         </div>

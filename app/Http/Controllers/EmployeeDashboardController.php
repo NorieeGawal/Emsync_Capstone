@@ -13,6 +13,7 @@ class EmployeeDashboardController extends Controller
         $period = $request->query('period', Carbon::now()->format('Y-m'));
 
         $scores = $employee->kpiScoresForPeriod($period);
+        $productivityRecord = $employee->productivityRecordForPeriod($period);
         $overallScore = $employee->overallScore($period);
 
         $recentLogs = $employee->attendanceLogs()->orderBy('date', 'desc')->take(5)->get();
@@ -29,7 +30,7 @@ class EmployeeDashboardController extends Controller
         }
 
         return view('employee.dashboard', compact(
-            'employee', 'period', 'scores', 'overallScore', 'recentLogs',
+            'employee', 'period', 'scores', 'productivityRecord', 'overallScore', 'recentLogs',
             'trendLabels', 'trendScores', 'notes'
         ));
     }
