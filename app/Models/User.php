@@ -47,6 +47,24 @@ class User extends Authenticatable
         return static::onlyTrashed()->where('deleted_at', '<=', now()->subMonth());
     }
 
+    public function scopeWithMetricsForPeriods(Builder $query, array $periods): Builder
+    {
+        $periods = array_values(array_unique($periods));
+
+        if ($periods === []) {
+            return $query;
+        }
+
+        sort($periods, SORT_STRING);
+        $start = Carbon::createFromFormat('Y-m', $periods[0])->startOfMonth()->toDateString();
+        $end = Carbon::createFromFormat('Y-m', $periods[count($periods) - 1])->endOfMonth()->toDateString();
+
+        return $query->with([
+            'kpiRecords' => fn ($records) => $records->whereIn('period', $periods)->with('kpiIndicator'),
+            'attendanceLogs' => fn ($logs) => $logs->whereBetween('date', [$start, $end]),
+        ]);
+    }
+
     protected function pruning(): void
     {
         if ($this->profile_photo_path) {
@@ -88,10 +106,7 @@ class User extends Authenticatable
      */
     public function attendancePercentage(string $period): float
     {
-        $month = Carbon::createFromFormat('Y-m', $period);
-        $logs = $this->attendanceLogs()
-            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
-            ->get();
+        $logs = $this->attendanceLogsForPeriod($period);
 
         if ($logs->isEmpty()) {
             return 0;
@@ -108,11 +123,8 @@ class User extends Authenticatable
      */
     public function punctualityPercentage(string $period): float
     {
-        $month = Carbon::createFromFormat('Y-m', $period);
-        $logs = $this->attendanceLogs()
-            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
-            ->whereIn('status', ['present', 'late'])
-            ->get();
+        $logs = $this->attendanceLogsForPeriod($period)
+            ->whereIn('status', ['present', 'late']);
 
         if ($logs->isEmpty()) {
             return 0;
@@ -128,12 +140,11 @@ class User extends Authenticatable
      */
     public function kpiScoresForPeriod(string $period): array
     {
-        $manualScores = $this->kpiRecords()
-            ->where('period', $period)
-            ->with('kpiIndicator')
-            ->get()
-            ->pluck('score', 'kpiIndicator.name')
-            ->toArray();
+        $records = $this->relationLoaded('kpiRecords')
+            ? $this->getRelation('kpiRecords')->where('period', $period)
+            : $this->kpiRecords()->where('period', $period)->with('kpiIndicator')->get();
+        $records->loadMissing('kpiIndicator');
+        $manualScores = $records->pluck('score', 'kpiIndicator.name')->toArray();
 
         $manualScores['Attendance'] = $this->attendancePercentage($period);
         $manualScores['Punctuality'] = $this->punctualityPercentage($period);
@@ -183,5 +194,19 @@ class User extends Authenticatable
         }
 
         return round($weightedScore, 2);
+    }
+
+    private function attendanceLogsForPeriod(string $period)
+    {
+        $month = Carbon::createFromFormat('Y-m', $period);
+        $start = $month->copy()->startOfMonth()->toDateString();
+        $end = $month->copy()->endOfMonth()->toDateString();
+
+        if ($this->relationLoaded('attendanceLogs')) {
+            return $this->getRelation('attendanceLogs')
+                ->filter(fn (AttendanceLog $log): bool => $log->date >= $start && $log->date <= $end);
+        }
+
+        return $this->attendanceLogs()->whereBetween('date', [$start, $end])->get();
     }
 }

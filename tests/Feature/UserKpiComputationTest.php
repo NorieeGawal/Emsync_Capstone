@@ -4,6 +4,7 @@ use App\Models\AttendanceLog;
 use App\Models\KpiIndicator;
 use App\Models\KpiRecord;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 function createComputationIndicator(string $name): KpiIndicator
 {
@@ -87,4 +88,38 @@ test('user KPI computation returns zero for a period without records', function 
         'Punctuality' => 0.0,
     ]);
     expect($employee->overallScore('2026-09'))->toBe(0.0);
+});
+
+test('preloaded period metrics calculate scores without per-employee queries', function () {
+    $indicator = createComputationIndicator('Productivity');
+    $employees = User::factory()->count(3)->create(['role' => 'employee']);
+
+    foreach ($employees as $employee) {
+        KpiRecord::create([
+            'employee_id' => $employee->id,
+            'kpi_indicator_id' => $indicator->id,
+            'period' => '2026-09',
+            'score' => 80,
+            'encoded_by' => $employee->id,
+        ]);
+
+        AttendanceLog::create([
+            'employee_id' => $employee->id,
+            'date' => '2026-09-01',
+            'status' => 'present',
+        ]);
+    }
+
+    $queryCount = 0;
+    DB::listen(function () use (&$queryCount): void {
+        $queryCount++;
+    });
+
+    $scores = User::whereIn('id', $employees->pluck('id'))
+        ->withMetricsForPeriods(['2026-09'])
+        ->get()
+        ->map(fn (User $employee): float => $employee->overallScore('2026-09'));
+
+    expect($scores->all())->toBe([42.0, 42.0, 42.0])
+        ->and($queryCount)->toBeLessThanOrEqual(4);
 });

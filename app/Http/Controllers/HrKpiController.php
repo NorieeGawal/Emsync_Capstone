@@ -12,9 +12,14 @@ class HrKpiController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->query('search');
-        $role = $request->query('role');
-        $period = $request->query('period', now()->format('Y-m'));
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'role' => ['nullable', 'in:employee,manager'],
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $search = $filters['search'] ?? null;
+        $role = $filters['role'] ?? null;
+        $period = $filters['period'] ?? now()->format('Y-m');
 
         $employees = User::whereIn('role', ['employee', 'manager'])
             ->with('department')
@@ -24,7 +29,9 @@ class HrKpiController extends Controller
             ->when($role, function ($query, $role) {
                 $query->where('role', $role);
             })
-            ->get();
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
         $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
             ->get()
             ->sortBy(fn ($indicator) => array_search($indicator->name, $this->manualIndicatorNames(), true))
@@ -46,7 +53,10 @@ class HrKpiController extends Controller
 
     public function edit(Request $request, User $employee)
     {
-        $period = $request->query('period', now()->format('Y-m'));
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? now()->format('Y-m');
         $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->get();
         $records = KpiRecord::where('employee_id', $employee->id)
             ->where('period', $period)

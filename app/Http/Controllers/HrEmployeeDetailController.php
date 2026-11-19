@@ -11,7 +11,10 @@ class HrEmployeeDetailController extends Controller
 {
     public function show(Request $request, User $employee)
     {
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
 
         $scores = $employee->kpiScoresForPeriod($period);
         $productivityRecord = $employee->productivityRecordForPeriod($period);

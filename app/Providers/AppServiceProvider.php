@@ -66,7 +66,7 @@ class AppServiceProvider extends ServiceProvider
                     'key' => "kpi-incomplete-{$period}",
                     'title' => 'KPI scores incomplete',
                     'message' => "{$missingKpiCount} employee(s) need KPI scores for ".now()->format('F Y').'.',
-                    'href' => route($kpiRoute),
+                    'href' => route($kpiRoute, absolute: false),
                     'tone' => 'amber',
                 ]);
             }
@@ -83,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
                     'key' => 'attendance-missing-'.today()->toDateString(),
                     'title' => 'Attendance missing',
                     'message' => "{$missingAttendanceCount} employee(s) have no attendance record today.",
-                    'href' => route($attendanceRoute),
+                    'href' => route($attendanceRoute, absolute: false),
                     'tone' => 'red',
                 ]);
             }
@@ -95,7 +95,7 @@ class AppServiceProvider extends ServiceProvider
                     'key' => 'department-assignment-needed',
                     'title' => 'Department assignment needed',
                     'message' => "{$unassignedCount} employee(s) are not assigned to a department.",
-                    'href' => route($user->role === 'manager' ? 'manager.employees.index' : 'hr.employees.index'),
+                    'href' => route($user->role === 'manager' ? 'manager.employees.index' : 'hr.employees.index', absolute: false),
                     'tone' => 'slate',
                 ]);
             }
@@ -107,7 +107,7 @@ class AppServiceProvider extends ServiceProvider
                     'key' => 'new-employee-accounts-'.today()->toDateString(),
                     'title' => 'New employee account',
                     'message' => "{$recentAccountCount} account(s) were added in the last 24 hours.",
-                    'href' => route('hr.employees.index'),
+                    'href' => route('hr.employees.index', absolute: false),
                     'tone' => 'blue',
                 ]);
             }

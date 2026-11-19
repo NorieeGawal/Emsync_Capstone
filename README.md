@@ -25,6 +25,10 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 
 Deleting an account from the HR employee directory moves it to Archived Accounts. It can be restored for one month, after which Laravel permanently removes it during the scheduled model-pruning task. Run `php artisan schedule:work` during local development; production must run `php artisan schedule:run` every minute.
 
+## Production security and performance
+
+Before deployment, set `APP_ENV=production`, `APP_DEBUG=false`, and `APP_URL` to the HTTPS site URL. Serve the app over HTTPS and set `SESSION_SECURE_COOKIE=true`. Run `php artisan optimize` after deployment, and configure the Laravel scheduler to invoke `php artisan schedule:run` every minute.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

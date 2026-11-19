@@ -10,14 +10,18 @@ use Illuminate\Support\Facades\Hash;
 class HrEmployeeController extends Controller
 {
         public function index(Request $request){
-        $search = $request->query('search');
+            $validated = $request->validate([
+                'search' => ['nullable', 'string', 'max:100'],
+            ]);
+            $search = $validated['search'] ?? null;
 
         $employees = User::with('department')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
             ->orderBy('role')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
         return view('hr.employees.index', compact('employees', 'search'));
     }

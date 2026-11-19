@@ -113,6 +113,10 @@
         </aside>
     </div>
 
+    <div class="mt-4">
+        {{ $employees->links() }}
+    </div>
+
     @foreach($employees as $employee)
         @php($employeeRecords = $records->get($employee->id, collect())->keyBy('kpi_indicator_id'))
         <div x-cloak x-show="modalEmployee === {{ $employee->id }}" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4" @click.self="modalEmployee = null">

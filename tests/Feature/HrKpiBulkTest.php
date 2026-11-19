@@ -54,7 +54,7 @@ test('hr can mark a KPI notification as read', function () {
 
     $this->post(route('notifications.read'), [
         'notification_key' => 'kpi-incomplete-'.now()->format('Y-m'),
-        'redirect_to' => route('hr.kpi.index'),
+        'redirect_to' => route('hr.kpi.index', absolute: false),
     ])->assertRedirect(route('hr.kpi.index'));
 
     $this->flushSession();

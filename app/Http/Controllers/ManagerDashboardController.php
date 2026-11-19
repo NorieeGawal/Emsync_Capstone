@@ -11,10 +11,19 @@ class ManagerDashboardController extends Controller
     public function index(Request $request)
     {
         $manager = auth()->user();
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
+
+        $trendPeriods = [];
+        for ($i = 2; $i >= 0; $i--) {
+            $trendPeriods[] = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
+        }
 
         $employees = User::where('role', 'employee')
             ->where('department_id', $manager->department_id)
+            ->withMetricsForPeriods($trendPeriods)
             ->get();
 
         $employeeScores = $employees->map(function ($employee) use ($period) {
@@ -31,10 +40,8 @@ class ManagerDashboardController extends Controller
         // Department average trend over the last 3 months
         $trendLabels = [];
         $trendScores = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $p = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
+        foreach ($trendPeriods as $p) {
             $trendLabels[] = Carbon::parse($p . '-01')->format('M Y');
-
             $monthScores = $employees->map(fn($e) => $e->overallScore($p));
             $trendScores[] = $monthScores->count() > 0 ? round($monthScores->avg(), 2) : 0;
         }

@@ -21,9 +21,14 @@ class HrAttendanceController extends Controller
 
     public function bulk(Request $request)
     {
-        $date = $request->query('date', now()->toDateString());
-        $departmentId = $request->query('department');
-        $search = $request->query('search');
+        $filters = $request->validate([
+            'date' => ['nullable', 'date'],
+            'department' => ['nullable', 'integer', 'exists:departments,id'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $date = $filters['date'] ?? now()->toDateString();
+        $departmentId = $filters['department'] ?? null;
+        $search = $filters['search'] ?? null;
 
         $departments = Department::all();
 

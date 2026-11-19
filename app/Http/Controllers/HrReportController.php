@@ -12,7 +12,16 @@ class HrReportController extends Controller
 {
     public function employeeReport(Request $request, User $employee)
     {
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
+
+        $trendPeriods = [];
+        for ($i = 2; $i >= 0; $i--) {
+            $trendPeriods[] = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
+        }
+        $employee = User::withMetricsForPeriods($trendPeriods)->findOrFail($employee->getKey());
 
         $scores = $employee->kpiScoresForPeriod($period);
         $productivityRecord = $employee->productivityRecordForPeriod($period);
@@ -21,8 +30,7 @@ class HrReportController extends Controller
 
         $trendLabels = [];
         $trendScores = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $p = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
+        foreach ($trendPeriods as $p) {
             $trendLabels[] = Carbon::parse($p . '-01')->format('M Y');
             $trendScores[] = $employee->overallScore($p);
         }
@@ -37,12 +45,18 @@ class HrReportController extends Controller
 
     public function summaryReport(Request $request)
     {
-        $departmentId = $request->query('department');
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'department' => ['nullable', 'integer', 'exists:departments,id'],
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $departmentId = $validated['department'] ?? null;
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
 
         $selectedDepartment = $departmentId ? Department::find($departmentId) : null;
 
-        $employeesQuery = User::whereIn('role', ['employee', 'manager'])->with('department');
+        $employeesQuery = User::whereIn('role', ['employee', 'manager'])
+            ->with('department')
+            ->withMetricsForPeriods([$period]);
         if ($departmentId) {
             $employeesQuery->where('department_id', $departmentId);
         }

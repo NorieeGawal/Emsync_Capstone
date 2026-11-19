@@ -112,6 +112,10 @@
         </aside>
     </div>
 
+    <div class="mt-4">
+        {{ $employees->links() }}
+    </div>
+
     <x-confirm-modal id="delete-modal" title="Archive Account" message="This account will be moved to Archived Accounts. It can be restored for one month before permanent deletion." />
 
     <script>

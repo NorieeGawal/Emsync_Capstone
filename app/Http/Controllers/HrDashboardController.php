@@ -12,14 +12,24 @@ class HrDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $departmentId = $request->query('department');
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'department' => ['nullable', 'integer', 'exists:departments,id'],
+            'period' => ['nullable', 'date_format:Y-m'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $departmentId = $validated['department'] ?? null;
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
+        $search = $validated['search'] ?? null;
 
         $departments = Department::all();
 
-               $search = $request->query('search');
+        $trendPeriods = [];
+        for ($i = 2; $i >= 0; $i--) {
+            $trendPeriods[] = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
+        }
 
         $employeesQuery = User::whereIn('role', ['employee', 'manager'])->with('department');
+        $employeesQuery->withMetricsForPeriods($trendPeriods);
         if ($departmentId) {
             $employeesQuery->where('department_id', $departmentId);
         }
@@ -56,10 +66,6 @@ class HrDashboardController extends Controller
         }
 
         // Trend: trailing 3 months leading up to the selected month, one line per indicator
-        $trendPeriods = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $trendPeriods[] = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
-        }
         $trendLabels = collect($trendPeriods)->map(fn($p) => Carbon::parse($p . '-01')->format('M Y'))->toArray();
 
         $trendDatasets = [];

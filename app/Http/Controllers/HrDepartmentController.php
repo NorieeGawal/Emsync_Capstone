@@ -9,7 +9,10 @@ class HrDepartmentController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->query('search');
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $search = $validated['search'] ?? null;
 
         $departments = Department::withCount('users')
             ->when($search, function ($query, $search) {

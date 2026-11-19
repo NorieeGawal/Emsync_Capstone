@@ -29,7 +29,10 @@ class ManagerEmployeeController extends Controller
             abort(403, 'You can only view employees in your own department.');
         }
 
-        $period = $request->query('period', Carbon::now()->format('Y-m'));
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? Carbon::now()->format('Y-m');
 
         $scores = $employee->kpiScoresForPeriod($period);
         $productivityRecord = $employee->productivityRecordForPeriod($period);

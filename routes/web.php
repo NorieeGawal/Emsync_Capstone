@@ -3,13 +3,11 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('landing');
-});
+Route::view('/', 'landing');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified', 'prevent-back-history'])->name('dashboard');
+Route::view('/dashboard', 'dashboard')
+    ->middleware(['auth', 'verified', 'prevent-back-history'])
+    ->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'role:hr', 'prevent-back-history'])->prefix('hr')->name('hr.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\HrDashboardController::class, 'index'])->name('dashboard');
