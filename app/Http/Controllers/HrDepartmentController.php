@@ -36,6 +36,7 @@ class HrDepartmentController extends Controller
 
     public function destroy(Department $department)
     {
+        // Preserve the department while employee records still reference it.
         if ($department->users()->count() > 0) {
             return redirect()->route('hr.departments.index')->with('error', 'Cannot delete a department with assigned employees.');
         }

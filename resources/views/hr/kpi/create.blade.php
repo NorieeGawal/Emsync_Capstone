@@ -80,6 +80,12 @@
                     <textarea name="remarks" rows="3" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">{{ old('remarks') }}</textarea>
                 </div>
 
+                <div class="mt-4">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Change reason (required when replacing a score)</label>
+                    <input type="text" name="reason" value="{{ old('reason') }}" maxlength="1000" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">
+                    @error('reason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
                 <div class="mt-6 flex items-center justify-between gap-3">
                     <button type="button" @click="$el.closest('form').querySelectorAll('input[name=&quot;workload_target&quot;], input[name=&quot;workload_completed&quot;], input[name^=&quot;scores[&quot;], textarea[name=&quot;remarks&quot;]').forEach(field => field.value = '')" class="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">Clear All</button>
                     <div class="flex gap-3">

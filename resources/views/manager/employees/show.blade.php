@@ -81,13 +81,17 @@
                         <tr>
                             <td class="px-4 py-2">{{ \Carbon\Carbon::parse($log->date)->format('M d') }}</td>
                             <td class="px-4 py-2">
-                                <span class="px-2 py-0.5 rounded text-xs
-                                    @if($log->status === 'present') bg-green-100 text-green-700
-                                    @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
-                                    @elseif($log->status === 'absent') bg-red-100 text-red-700
-                                    @else bg-gray-100 text-gray-700 @endif">
-                                    {{ ucfirst($log->status) }}
-                                </span>
+                                @if($log->hasAnyRecordedTime())
+                                    <span class="px-2 py-0.5 rounded text-xs
+                                        @if($log->status === 'present') bg-green-100 text-green-700
+                                        @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
+                                        @elseif($log->status === 'absent') bg-red-100 text-red-700
+                                        @else bg-gray-100 text-gray-700 @endif">
+                                        {{ ucfirst($log->status) }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>

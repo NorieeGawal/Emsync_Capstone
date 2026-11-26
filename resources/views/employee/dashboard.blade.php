@@ -82,9 +82,9 @@
     </div>
 
         <!-- Performance feedback -->
-    <div class="rounded-lg bg-white p-6 shadow-sm">
+    <div class="max-h-80 overflow-y-auto rounded-lg bg-white p-6 shadow-sm">
         <h4 class="font-semibold text-gray-800 mb-4">Performance Feedback</h4>
-        <div class="space-y-4 max-h-80 overflow-y-auto pr-2">
+        <div class="space-y-4">
             @forelse($notes as $note)
                 <div class="border-l-4 border-blue-700 bg-gray-50 px-4 py-3 rounded">
                     <p class="text-sm text-gray-800">{{ $note->note }}</p>
@@ -118,13 +118,17 @@
                         <td class="px-6 py-4 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
                         <td class="px-6 py-4 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded text-xs
-                                @if($log->status === 'present') bg-green-100 text-green-700
-                                @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
-                                @elseif($log->status === 'absent') bg-red-100 text-red-700
-                                @else bg-gray-100 text-gray-700 @endif">
-                                {{ ucfirst($log->status) }}
-                            </span>
+                            @if($log->hasAnyRecordedTime())
+                                <span class="px-2 py-0.5 rounded text-xs
+                                    @if($log->status === 'present') bg-green-100 text-green-700
+                                    @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
+                                    @elseif($log->status === 'absent') bg-red-100 text-red-700
+                                    @else bg-gray-100 text-gray-700 @endif">
+                                    {{ ucfirst($log->status) }}
+                                </span>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -135,6 +139,11 @@
             </tbody>
         </table>
         </div>
+        @if($recentLogs->hasPages())
+            <div class="border-t border-gray-100 px-4 py-3 sm:px-6">
+                {{ $recentLogs->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
     </div>
 

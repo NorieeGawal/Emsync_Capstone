@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\AttendanceLog;
@@ -77,11 +78,13 @@ class HrAttendanceController extends Controller
             ->pluck('id');
 
         abort_if($allowedEmployees->count() !== count(array_unique($entryEmployeeIds)), 422, 'One or more employees cannot receive attendance records.');
+        $scheduledTimeIn = Carbon::parse(AttendanceSetting::current()->scheduled_time_in)->format('H:i');
 
         foreach ($validated['entries'] as $employeeId => $entry) {
             $status = $entry['status'];
+            // Recorded time takes precedence over a submitted present/late choice using the current schedule.
             if (in_array($status, ['present', 'late'], true) && !empty($entry['time_in'])) {
-                $status = $entry['time_in'] > AttendanceSetting::current()->scheduled_time_in ? 'late' : 'present';
+                $status = $entry['time_in'] > $scheduledTimeIn ? 'late' : 'present';
             }
 
             AttendanceLog::updateOrCreate(
@@ -116,8 +119,10 @@ class HrAttendanceController extends Controller
             'time_out' => 'nullable|date_format:H:i',
         ]);
 
+        // Keep single-entry attendance consistent with the bulk schedule-based status rule.
         if (in_array($validated['status'], ['present', 'late'], true) && !empty($validated['time_in'])) {
-            $validated['status'] = $validated['time_in'] > AttendanceSetting::current()->scheduled_time_in ? 'late' : 'present';
+            $scheduledTimeIn = Carbon::parse(AttendanceSetting::current()->scheduled_time_in)->format('H:i');
+            $validated['status'] = $validated['time_in'] > $scheduledTimeIn ? 'late' : 'present';
         }
 
         AttendanceLog::updateOrCreate(

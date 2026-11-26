@@ -66,6 +66,7 @@ class DashboardNotificationController extends Controller
             $parts = parse_url($value);
             $path = is_array($parts) ? ($parts['path'] ?? '') : '';
 
+            // Accept only local paths; external redirects must not be supplied by a form parameter.
             if (
                 ! is_array($parts)
                 || isset($parts['scheme'])

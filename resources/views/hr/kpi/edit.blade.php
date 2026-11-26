@@ -82,6 +82,12 @@
                         <textarea id="remarks" name="remarks" rows="2" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">{{ old('remarks', $records->first()?->remarks) }}</textarea>
                     </div>
 
+                    <div class="mt-4">
+                        <label for="reason" class="mb-2 block text-sm font-medium text-slate-700">Change reason (required when replacing a score)</label>
+                        <input id="reason" type="text" name="reason" value="{{ old('reason') }}" maxlength="1000" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">
+                        @error('reason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="mt-5 flex gap-3">
                         <button type="submit" class="rounded-xl bg-[#0d3b66] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_10px_rgba(13,59,102,0.18)] transition hover:bg-[#0b2e52]">Save Changes</button>
                         <a href="{{ route('hr.kpi.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100">Cancel</a>

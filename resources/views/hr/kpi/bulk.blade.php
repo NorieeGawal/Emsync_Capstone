@@ -85,6 +85,12 @@
                     <textarea name="remarks" rows="2" class="w-full rounded-xl border-slate-300 bg-slate-50 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">{{ old('remarks') }}</textarea>
                 </div>
 
+                <div class="mt-3">
+                    <label class="mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Change reason (required when replacing existing scores)</label>
+                    <input type="text" name="reason" value="{{ old('reason') }}" maxlength="1000" class="w-full rounded-xl border-slate-300 bg-slate-50 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">
+                    @error('reason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
                 @error('employee_ids')
                     <p class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</p>
                 @enderror

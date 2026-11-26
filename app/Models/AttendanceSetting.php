@@ -13,6 +13,7 @@ class AttendanceSetting extends Model
 
     public static function current(): self
     {
+        // Create baseline hours on first use so attendance entry always has a schedule to compare against.
         return static::firstOrCreate([], [
             'scheduled_time_in' => '08:00:00',
             'scheduled_time_out' => '17:00:00',

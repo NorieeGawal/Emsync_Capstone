@@ -1,4 +1,4 @@
-<x-layouts.dashboard title="HR KPI Management" header-subtitle="Select an employee or manager to encode individual scores, or use bulk entry.">
+<x-layouts.dashboard title="HR KPI Management" header-subtitle="Select an employee or manager to encode, edit, undo, or delete KPI scores.">
     <div x-data="{ modalEmployee: null }" @keydown.escape.window="modalEmployee = null">
 
     <form method="GET" action="{{ route('hr.kpi.index') }}" class="mb-6 flex flex-wrap items-center gap-3 rounded-[22px] border border-slate-200 bg-white/80 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
@@ -25,9 +25,14 @@
             Apply
         </button>
 
-        <a href="{{ route('hr.kpi.bulk') }}" class="ml-auto inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
-            Bulk Entry
-        </a>
+        <div class="ml-auto flex flex-wrap gap-2">
+            <a href="{{ route('hr.kpi.bulk') }}" class="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(17,17,17,0.14)] transition hover:-translate-y-0.5 hover:bg-[#232a30]">
+                Bulk Entry
+            </a>
+            <a href="{{ route('hr.kpi.scores.delete') }}" class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50">
+                Delete KPI Scores
+            </a>
+        </div>
         @if($search || $role)
             <a href="{{ route('hr.kpi.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:text-red-600">Clear</a>
         @endif
@@ -42,7 +47,13 @@
     <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_250px] xl:items-stretch xl:h-[calc(100vh-13.5rem)]">
         <div class="flex h-full min-h-0 flex-col self-stretch overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
             <div class="scroll-surface flex-1 overflow-y-auto">
-            <table class="w-full text-left text-sm">
+            <table class="w-full table-fixed text-left text-sm">
+                <colgroup>
+                    <col class="w-1/4">
+                    <col class="w-1/4">
+                    <col class="w-1/4">
+                    <col class="w-1/4">
+                </colgroup>
                 <thead class="sticky top-0 z-10 bg-[#f8f9fb] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-[inset_0_-1px_0_rgba(148,163,184,0.22)]">
                     <tr>
                         <th class="px-5 py-3.5">Name</th>
@@ -189,6 +200,12 @@
                     <div class="mt-4">
                         <label for="modal-remarks-{{ $employee->id }}" class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Remarks</label>
                         <textarea id="modal-remarks-{{ $employee->id }}" name="remarks" rows="2" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">{{ $employeeRecords->first()?->remarks }}</textarea>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="modal-reason-{{ $employee->id }}" class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Change reason (required when replacing a score)</label>
+                        <input id="modal-reason-{{ $employee->id }}" type="text" name="reason" maxlength="1000" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25">
+                        @error('reason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="mt-5 flex items-center justify-between gap-2">

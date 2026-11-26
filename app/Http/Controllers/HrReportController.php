@@ -17,6 +17,7 @@ class HrReportController extends Controller
         ]);
         $period = $validated['period'] ?? Carbon::now()->format('Y-m');
 
+        // Include the selected month and its two predecessors for the report trend.
         $trendPeriods = [];
         for ($i = 2; $i >= 0; $i--) {
             $trendPeriods[] = Carbon::parse($period . '-01')->subMonths($i)->format('Y-m');
@@ -69,6 +70,7 @@ class HrReportController extends Controller
             ];
         })->sortByDesc('overallScore')->values();
 
+        // The company average is based on each employee's weighted score, not indicator averages.
         $companyAverage = $employeeSummaries->count() > 0
             ? round($employeeSummaries->avg('overallScore'), 2)
             : 0;

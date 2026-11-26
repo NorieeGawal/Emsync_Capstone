@@ -10,7 +10,7 @@ This guide explains the main tasks for HR, managers, and employees.
 4. Use the profile menu near the top-right to update your profile or password.
 5. Select **Log out** when you finish, especially on a shared computer.
 
-If you cannot sign in or a page says you do not have permission, contact HR or your system administrator.
+After three failed sign-in attempts, you must wait one minute before trying again. If you cannot sign in or a page says you do not have permission, contact HR or your system administrator.
 
 ## HR
 
@@ -62,6 +62,19 @@ The overall score uses these weights:
 | Punctuality | 10% |
 
 Missing scores count as **0** in the overall score. Missing attendance logs also produce 0 for Attendance and Punctuality. Check that the selected month has complete records before relying on a total. Saving scores for the same person, KPI, and month updates the existing entry.
+
+### Delete an incorrect saved KPI entry (HR)
+
+1. In **KPI Management**, open **Delete KPI Scores** beside **Bulk Entry**, then find the employee or manager and choose the review period.
+2. Review the employee, period, and scores. Enter a deletion reason, then confirm to delete the entire entry or only the selected KPI criterion.
+3. Use **Encode** to enter and save the corrected scores. The deletion is saved in KPI history with the actor, reason, values, and timestamp.
+
+### Correct KPI scores (HR)
+
+1. Use **Edit KPI** beside an employee or manager to correct existing scores; enter a reason when saving changes.
+2. To remove an incorrect score, open **Delete KPI Scores** beside **Bulk Entry** and select **Delete KPI** for the relevant employee.
+3. Provide a reason when deleting. The action and previous values are recorded in KPI history.
+4. The **Delete KPI Scores** bulk action removes scores for the selected people and review period only.
 
 ### Review employees and download reports
 

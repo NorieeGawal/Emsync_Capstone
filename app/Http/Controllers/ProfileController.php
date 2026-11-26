@@ -43,6 +43,7 @@ class ProfileController extends Controller
         }
 
         if ($user->isDirty('email')) {
+            // A changed address must be verified again before it is treated as confirmed.
             $user->email_verified_at = null;
         }
 

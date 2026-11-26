@@ -44,6 +44,7 @@ class User extends Authenticatable
 
     public function prunable(): Builder
     {
+        // Keep archived accounts recoverable for a month before permanent cleanup.
         return static::onlyTrashed()->where('deleted_at', '<=', now()->subMonth());
     }
 
@@ -56,6 +57,7 @@ class User extends Authenticatable
         }
 
         sort($periods, SORT_STRING);
+        // KPI records need exact periods; attendance logs can be eager-loaded once across the date range.
         $start = Carbon::createFromFormat('Y-m', $periods[0])->startOfMonth()->toDateString();
         $end = Carbon::createFromFormat('Y-m', $periods[count($periods) - 1])->endOfMonth()->toDateString();
 
@@ -140,6 +142,7 @@ class User extends Authenticatable
      */
     public function kpiScoresForPeriod(string $period): array
     {
+        // Reuse eager-loaded records on dashboards; otherwise fetch only the requested period.
         $records = $this->relationLoaded('kpiRecords')
             ? $this->getRelation('kpiRecords')->where('period', $period)
             : $this->kpiRecords()->where('period', $period)->with('kpiIndicator')->get();
@@ -212,9 +215,14 @@ class User extends Authenticatable
 
         if ($this->relationLoaded('attendanceLogs')) {
             return $this->getRelation('attendanceLogs')
-                ->filter(fn (AttendanceLog $log): bool => $log->date >= $start && $log->date <= $end);
+                ->filter(fn (AttendanceLog $log): bool => $log->date >= $start
+                    && $log->date <= $end
+                    && $log->hasAnyRecordedTime());
         }
 
-        return $this->attendanceLogs()->whereBetween('date', [$start, $end])->get();
+        return $this->attendanceLogs()
+            ->whereBetween('date', [$start, $end])
+            ->get()
+            ->filter(fn (AttendanceLog $log): bool => $log->hasAnyRecordedTime());
     }
 }
