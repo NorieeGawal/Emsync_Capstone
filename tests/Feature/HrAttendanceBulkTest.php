@@ -84,7 +84,7 @@ test('hr can set the company attendance schedule', function () {
     expect(Carbon::parse(AttendanceSetting::current()->scheduled_time_out)->format('H:i'))->toBe('17:00');
 });
 
-test('attendance status is automatically based on the scheduled time in', function () {
+test('attendance status uses the schedule boundary in bulk entries', function () {
     $hr = User::factory()->create(['role' => 'hr']);
     $employee = User::factory()->create(['role' => 'employee']);
 
@@ -93,18 +93,25 @@ test('attendance status is automatically based on the scheduled time in', functi
         'scheduled_time_out' => '17:00',
     ]);
 
-    $this->actingAs($hr)->post(route('hr.attendance.bulk.store'), [
-        'date' => '2026-09-17',
-        'entries' => [
-            $employee->id => [
-                'status' => 'present',
-                'time_in' => '08:01',
-                'time_out' => '17:00',
+    foreach ([
+        '2026-09-17' => ['07:30', 'present'],
+        '2026-09-18' => ['08:00', 'present'],
+        '2026-09-19' => ['08:01', 'late'],
+    ] as $date => [$timeIn, $expectedStatus]) {
+        $this->actingAs($hr)->post(route('hr.attendance.bulk.store'), [
+            'date' => $date,
+            'entries' => [
+                $employee->id => [
+                    'status' => 'present',
+                    'time_in' => $timeIn,
+                    'time_out' => '17:00',
+                ],
             ],
-        ],
-    ]);
+        ]);
 
-    expect(AttendanceLog::where('employee_id', $employee->id)->first()->status)->toBe('late');
+        expect(AttendanceLog::where('employee_id', $employee->id)->where('date', $date)->first()->status)
+            ->toBe($expectedStatus);
+    }
 });
 
 test('bulk attendance rejects users outside the employee and manager roles', function () {

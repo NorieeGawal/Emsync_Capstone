@@ -58,7 +58,7 @@
                 </div>
             </form>
 
-            <form method="POST" action="{{ route('hr.attendance.bulk.store') }}" class="flex min-h-0 flex-1 flex-col rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
+            <form method="POST" action="{{ route('hr.attendance.bulk.store') }}" data-scheduled-time-in="{{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('H:i') }}" class="flex min-h-0 flex-1 flex-col rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
                 @csrf
                 <input type="hidden" name="date" value="{{ $date }}">
 
@@ -86,7 +86,7 @@
                                         <td class="px-4 py-2.5 font-semibold text-slate-800">{{ $employee->name }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ $employee->department->name ?? '—' }}</td>
                                         <td class="px-4 py-2.5">
-                                            <select name="entries[{{ $employee->id }}][status]" class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 text-sm text-slate-700 shadow-sm focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
+                                            <select name="entries[{{ $employee->id }}][status]" title="Automatically set from Time In: at or before schedule is Present; after schedule is Late." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 text-sm text-slate-700 shadow-sm focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
                                                 <option value="present" {{ $status === 'present' ? 'selected' : '' }}>Present</option>
                                                 <option value="late" {{ $status === 'late' ? 'selected' : '' }}>Late</option>
                                                 <option value="absent" {{ $status === 'absent' ? 'selected' : '' }}>Absent</option>
@@ -94,7 +94,7 @@
                                             </select>
                                         </td>
                                         <td class="px-4 py-2.5">
-                                            <input type="text" name="entries[{{ $employee->id }}][time_in]" value="{{ $timeIn }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 shadow-sm focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
+                                            <input type="text" name="entries[{{ $employee->id }}][time_in]" data-attendance-time-in value="{{ $timeIn }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 shadow-sm focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
                                         </td>
                                         <td class="px-4 py-2.5">
                                             <input type="text" name="entries[{{ $employee->id }}][time_out]" value="{{ $timeOut }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 shadow-sm focus:border-[#f4c212] focus:outline-none focus:ring-2 focus:ring-[#f4c212]/20">
@@ -127,7 +127,7 @@
                 <div class="flex-1 rounded-[16px] bg-white p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                     <p class="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-500">Before saving</p>
                     <p class="mt-2 text-sm leading-5 text-slate-600">
-                        Verify the date, department filter, and scheduled time before finalizing attendance entries.
+                        Status updates as Time In is entered: on or before the scheduled time is Present; after it is Late.
                     </p>
                 </div>
 

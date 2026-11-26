@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    private const MAX_LOGIN_ATTEMPTS = 3;
+
+    private const LOCKOUT_SECONDS = 60;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -44,24 +48,17 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+            $this->recordFailedAttempt('email', trans('auth.failed'));
         }
 
-        // Verify the selected role matches the account's actual role when a role is provided.
+        // Keep role mismatches indistinguishable from bad passwords to avoid revealing account details.
         if ($this->filled('role') && Auth::user()->role !== $this->input('role')) {
             Auth::logout();
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'role' => 'The selected role does not match this account.',
-            ]);
+            $this->recordFailedAttempt('email', trans('auth.failed'));
         }
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->lockoutKey());
     }
 
     /**
@@ -71,13 +68,32 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->lockoutKey(), 1)) {
             return;
         }
 
+        $this->throwRateLimited();
+    }
+
+    private function recordFailedAttempt(string $field, string $message): void
+    {
+        if (RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS) >= self::MAX_LOGIN_ATTEMPTS) {
+            RateLimiter::clear($this->throttleKey());
+            // A separate key starts a fresh full lockout window on the third failed attempt.
+            RateLimiter::hit($this->lockoutKey(), self::LOCKOUT_SECONDS);
+            $this->throwRateLimited();
+        }
+
+        throw ValidationException::withMessages([
+            $field => $message,
+        ]);
+    }
+
+    private function throwRateLimited(): void
+    {
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($this->lockoutKey());
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -93,5 +109,10 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    private function lockoutKey(): string
+    {
+        return $this->throttleKey().':lockout';
     }
 }

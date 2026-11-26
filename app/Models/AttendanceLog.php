@@ -15,6 +15,11 @@ class AttendanceLog extends Model
         'status',
     ];
 
+    public function hasAnyRecordedTime(): bool
+    {
+        return filled($this->time_in) || filled($this->time_out);
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'employee_id');

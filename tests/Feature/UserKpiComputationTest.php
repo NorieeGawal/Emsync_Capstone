@@ -42,6 +42,8 @@ test('user KPI computation orders scores and calculates the weighted total', fun
         [
             'employee_id' => $employee->id,
             'date' => '2026-09-01',
+            'time_in' => '08:00:00',
+            'time_out' => '17:00:00',
             'status' => 'present',
             'created_at' => now(),
             'updated_at' => now(),
@@ -49,6 +51,8 @@ test('user KPI computation orders scores and calculates the weighted total', fun
         [
             'employee_id' => $employee->id,
             'date' => '2026-09-02',
+            'time_in' => '08:30:00',
+            'time_out' => '17:00:00',
             'status' => 'late',
             'created_at' => now(),
             'updated_at' => now(),
@@ -56,6 +60,8 @@ test('user KPI computation orders scores and calculates the weighted total', fun
         [
             'employee_id' => $employee->id,
             'date' => '2026-09-03',
+            'time_in' => '08:00:00',
+            'time_out' => '17:00:00',
             'status' => 'absent',
             'created_at' => now(),
             'updated_at' => now(),
@@ -63,6 +69,8 @@ test('user KPI computation orders scores and calculates the weighted total', fun
         [
             'employee_id' => $employee->id,
             'date' => '2026-09-04',
+            'time_in' => '08:00:00',
+            'time_out' => '17:00:00',
             'status' => 'excused',
             'created_at' => now(),
             'updated_at' => now(),
@@ -80,10 +88,35 @@ test('user KPI computation orders scores and calculates the weighted total', fun
     expect($employee->overallScore($period))->toBe(73.5);
 });
 
+test('attendance logs without either time are excluded from attendance and punctuality', function () {
+    $employee = User::factory()->create(['role' => 'employee']);
+
+    AttendanceLog::create([
+        'employee_id' => $employee->id,
+        'date' => '2026-09-01',
+        'status' => 'present',
+    ]);
+
+    AttendanceLog::create([
+        'employee_id' => $employee->id,
+        'date' => '2026-09-02',
+        'time_in' => '08:00:00',
+        'time_out' => '17:00:00',
+        'status' => 'present',
+    ]);
+
+    expect($employee->attendancePercentage('2026-09'))->toBe(100.0)
+        ->and($employee->punctualityPercentage('2026-09'))->toBe(100.0);
+});
+
 test('user KPI computation returns zero for a period without records', function () {
     $employee = User::factory()->create(['role' => 'employee']);
 
     expect($employee->kpiScoresForPeriod('2026-09'))->toBe([
+        'Productivity' => 0,
+        'Efficiency' => 0,
+        'Work Quality' => 0,
+        'Timeliness' => 0,
         'Attendance' => 0.0,
         'Punctuality' => 0.0,
     ]);
@@ -106,6 +139,8 @@ test('preloaded period metrics calculate scores without per-employee queries', f
         AttendanceLog::create([
             'employee_id' => $employee->id,
             'date' => '2026-09-01',
+            'time_in' => '08:00:00',
+            'time_out' => '17:00:00',
             'status' => 'present',
         ]);
     }

@@ -14,8 +14,8 @@
         <!-- Entry form -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h4 class="font-semibold text-gray-800 mb-4">Add / Update Daily Log</h4>
-            <p class="mb-4 text-xs text-gray-500">Use 24-hour time (HH:MM). Scheduled: {{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('H:i') }} in, {{ \Carbon\Carbon::parse($settings->scheduled_time_out)->format('H:i') }} out. A later check-in is marked late.</p>
-            <form action="{{ route('hr.attendance.store', $employee) }}" method="POST">
+            <p class="mb-4 text-xs text-gray-500">Use 24-hour time (HH:MM). Scheduled: {{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('H:i') }} in, {{ \Carbon\Carbon::parse($settings->scheduled_time_out)->format('H:i') }} out. Time In sets Present at or before schedule and Late after schedule.</p>
+            <form action="{{ route('hr.attendance.store', $employee) }}" method="POST" data-scheduled-time-in="{{ \Carbon\Carbon::parse($settings->scheduled_time_in)->format('H:i') }}">
                 @csrf
 
                 <div class="mb-4">
@@ -26,7 +26,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" class="w-full border-gray-300 rounded-md text-sm" required>
+                    <select name="status" title="Automatically set from Time In: at or before schedule is Present; after schedule is Late." class="w-full border-gray-300 rounded-md text-sm" required>
                         <option value="present">Present</option>
                         <option value="late">Late</option>
                         <option value="absent">Absent</option>
@@ -37,7 +37,7 @@
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time In</label>
-                        <input type="text" name="time_in" value="{{ old('time_in') }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="w-full rounded-md border-gray-300 text-sm">
+                        <input type="text" name="time_in" data-attendance-time-in value="{{ old('time_in') }}" placeholder="HH:MM" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="Enter time in 24-hour HH:MM format, from 00:00 to 23:59." class="w-full rounded-md border-gray-300 text-sm">
                         @error('time_in') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -73,13 +73,17 @@
                         <tr>
                             <td class="px-4 py-2">{{ \Carbon\Carbon::parse($log->date)->format('M d') }}</td>
                             <td class="px-4 py-2">
-                                <span class="px-2 py-0.5 rounded text-xs
-                                    @if($log->status === 'present') bg-green-100 text-green-700
-                                    @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
-                                    @elseif($log->status === 'absent') bg-red-100 text-red-700
-                                    @else bg-gray-100 text-gray-700 @endif">
-                                    {{ ucfirst($log->status) }}
-                                </span>
+                                @if($log->hasAnyRecordedTime())
+                                    <span class="px-2 py-0.5 rounded text-xs
+                                        @if($log->status === 'present') bg-green-100 text-green-700
+                                        @elseif($log->status === 'late') bg-yellow-100 text-yellow-700
+                                        @elseif($log->status === 'absent') bg-red-100 text-red-700
+                                        @else bg-gray-100 text-gray-700 @endif">
+                                        {{ ucfirst($log->status) }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-2 text-gray-600">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('H:i') : '—' }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $log->time_out ? \Carbon\Carbon::parse($log->time_out)->format('H:i') : '—' }}</td>

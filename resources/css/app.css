@@ -78,6 +78,19 @@ textarea {
     filter: brightness(0) saturate(100%) invert(72%) sepia(90%) saturate(2500%) hue-rotate(11deg) brightness(1.08) contrast(1.25);
 }
 
+.brand-logo-mask {
+    display: block;
+    background-color: var(--brand-primary);
+    -webkit-mask-image: var(--brand-logo-url);
+    mask-image: var(--brand-logo-url);
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .animate-slide-up {
     animation: slideUp 0.9s ease-out both;
 }

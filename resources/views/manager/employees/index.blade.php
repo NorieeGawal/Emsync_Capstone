@@ -16,7 +16,9 @@
                         <td class="px-6 py-4 font-medium text-gray-900">{{ $employee->name }}</td>
                         <td class="px-6 py-4 text-gray-600">{{ $employee->email }}</td>
                         <td class="px-6 py-4">
-                            <a href="{{ route('manager.employees.show', $employee) }}" class="text-blue-700 hover:underline">View Profile</a>
+                            <a href="{{ route('manager.employees.show', $employee) }}" aria-label="View {{ $employee->name }} profile" class="inline-flex items-center whitespace-nowrap rounded-lg bg-[#f4c212] px-3 py-2 text-xs font-bold text-[#111111] shadow-sm transition hover:-translate-y-0.5 hover:bg-[#e3b300] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c212] focus-visible:ring-offset-2">
+                                <span>View Profile</span>
+                            </a>
                         </td>
                     </tr>
                 @empty

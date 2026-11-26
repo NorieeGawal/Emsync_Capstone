@@ -26,7 +26,10 @@ class EmployeeDashboardController extends Controller
         $productivityRecord = $employee->productivityRecordForPeriod($period);
         $overallScore = $employee->overallScore($period);
 
-        $recentLogs = $employee->attendanceLogs()->orderBy('date', 'desc')->take(5)->get();
+        $recentLogs = $employee->attendanceLogs()
+            ->orderByDesc('date')
+            ->paginate(10, ['*'], 'attendance_page')
+            ->withQueryString();
 
         $notes = $employee->performanceNotes()->with('author')->latest()->get();
 

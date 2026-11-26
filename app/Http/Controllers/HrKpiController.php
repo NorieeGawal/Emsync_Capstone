@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Department;
-use App\Models\User;
 use App\Models\KpiIndicator;
 use App\Models\KpiRecord;
+use App\Models\KpiScoreAudit;
+use App\Models\User;
+use App\Services\KpiScoreHistoryService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class HrKpiController extends Controller
 {
@@ -44,11 +48,226 @@ class HrKpiController extends Controller
         return view('hr.kpi.index', compact('employees', 'search', 'role', 'period', 'indicators', 'records'));
     }
 
+    public function undoScores(Request $request, User $employee)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? now()->format('Y-m');
+        $records = KpiRecord::with('kpiIndicator')
+            ->where('employee_id', $employee->id)
+            ->where('period', $period)
+            ->orderBy('kpi_indicator_id')
+            ->get();
+        $activeAudits = KpiScoreAudit::where('employee_id', $employee->id)
+            ->where('period', $period)
+            ->whereIn('action', ['created', 'updated', 'deleted'])
+            ->whereNull('reversed_at')
+            ->orderByDesc('id')
+            ->get();
+        $latestByIndicator = $activeAudits->groupBy('kpi_indicator_id')
+            ->map(fn ($entries) => $entries->first());
+        $transactions = $activeAudits->groupBy('transaction_id')
+            ->filter(fn ($entries) => $entries->every(
+                fn (KpiScoreAudit $entry): bool => $latestByIndicator->get($entry->kpi_indicator_id)?->id === $entry->id
+            ))
+            ->map(fn ($entries, string $transactionId): array => [
+                'id' => $transactionId,
+                'entries' => $entries->sortBy('kpi_indicator_name')->values(),
+                'created_at' => $entries->max('created_at'),
+            ])
+            ->sortByDesc('created_at')
+            ->values();
+
+        return view('hr.kpi.undo', compact('employee', 'period', 'records', 'latestByIndicator', 'transactions'));
+    }
+
+    public function undoScore(Request $request, User $employee, KpiScoreHistoryService $history)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'kpi_indicator_id' => ['required', 'integer', 'exists:kpi_indicators,id'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $history->undoScore(
+            $employee,
+            $validated['period'],
+            (int) $validated['kpi_indicator_id'],
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('hr.kpi.undo', [$employee, 'period' => $validated['period']])
+            ->with('success', 'The selected KPI score was undone. KPI totals are recalculated automatically.');
+    }
+
+    public function undoSubmission(Request $request, User $employee, KpiScoreHistoryService $history)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'transaction_id' => ['required', 'uuid'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $count = $history->undoSubmission(
+            $employee,
+            $validated['period'],
+            $validated['transaction_id'],
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('hr.kpi.undo', [$employee, 'period' => $validated['period']])
+            ->with('success', "{$count} KPI score(s) from that submission were undone. KPI totals are recalculated automatically.");
+    }
+
+    public function undoAllScores(Request $request, User $employee, KpiScoreHistoryService $history)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $count = $history->undoAllCurrentScores(
+            $employee,
+            $validated['period'],
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('hr.kpi.undo', [$employee, 'period' => $validated['period']])
+            ->with('success', "{$count} current KPI score(s) were undone. KPI totals are recalculated automatically.");
+    }
+
     public function create(User $employee)
     {
         $indicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->get();
 
         return view('hr.kpi.create', compact('employee', 'indicators'));
+    }
+
+    public function deleteScores(Request $request)
+    {
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? now()->format('Y-m');
+        $employees = User::whereIn('role', ['employee', 'manager'])
+            ->with('department')
+            ->orderBy('name')
+            ->get();
+
+        return view('hr.kpi.delete', compact('employees', 'period'));
+    }
+
+    public function destroyScores(Request $request, KpiScoreHistoryService $history)
+    {
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'employee_ids' => ['required', 'array', 'min:1'],
+            'employee_ids.*' => ['integer', 'distinct', 'exists:users,id'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $employeeIds = array_map('intval', $validated['employee_ids']);
+        $eligibleEmployeeIds = User::whereIn('role', ['employee', 'manager'])
+            ->whereIn('id', $employeeIds)
+            ->pluck('id');
+
+        abort_if(
+            $eligibleEmployeeIds->count() !== count($employeeIds),
+            422,
+            'Only employees and managers can have KPI scores deleted.'
+        );
+
+        $employees = User::whereIn('id', $eligibleEmployeeIds)->get();
+        $deletedCount = DB::transaction(function () use ($employees, $validated, $history): int {
+            return $employees->sum(fn (User $employee): int => $history->deleteForEmployeePeriod(
+                $employee,
+                $validated['period'],
+                auth()->user(),
+                $validated['reason'],
+            ));
+        });
+
+        return redirect()
+            ->route('hr.kpi.index', ['period' => $validated['period']])
+            ->with('success', "{$deletedCount} KPI score record(s) deleted for the selected review period.");
+    }
+
+    public function deleteSavedEntry(Request $request, User $employee)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $period = $validated['period'] ?? now()->format('Y-m');
+        $records = KpiRecord::with('kpiIndicator')
+            ->where('employee_id', $employee->id)
+            ->where('period', $period)
+            ->orderBy('kpi_indicator_id')
+            ->get();
+        $scoreSummary = $records->map(function (KpiRecord $record): string {
+            $indicator = $record->kpiIndicator?->name ?? 'Unknown KPI';
+            $workload = $record->workload_target !== null
+                ? " ({$record->workload_completed} completed / {$record->workload_target} target)"
+                : '';
+
+            return "{$indicator}: ".number_format((float) $record->score, 2).$workload;
+        })->implode('; ');
+        $entryConfirmation = "Delete the saved KPI entry for {$employee->name} for {$period}? Affected scores: ".($scoreSummary ?: 'none').'.';
+
+        return view('hr.kpi.delete-entry', compact('employee', 'period', 'records', 'entryConfirmation'));
+    }
+
+    public function destroySavedEntry(Request $request, User $employee, KpiScoreHistoryService $history)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $deletedCount = $history->deleteSavedEntry(
+            $employee,
+            $validated['period'],
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('hr.kpi.saved-entry.delete', [$employee, 'period' => $validated['period']])
+            ->with('success', "{$deletedCount} KPI score(s) deleted for {$employee->name}.");
+    }
+
+    public function destroySavedScore(Request $request, User $employee, KpiScoreHistoryService $history)
+    {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'kpi_indicator_id' => ['required', 'integer', 'exists:kpi_indicators,id'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $history->deleteSavedCriterion(
+            $employee,
+            $validated['period'],
+            (int) $validated['kpi_indicator_id'],
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('hr.kpi.saved-entry.delete', [$employee, 'period' => $validated['period']])
+            ->with('success', 'The selected KPI score was deleted.');
     }
 
     public function edit(Request $request, User $employee)
@@ -86,7 +305,7 @@ class HrKpiController extends Controller
         return view('hr.kpi.bulk', compact('departments', 'departmentId', 'search', 'employees', 'indicators'));
     }
 
-    public function storeBulk(Request $request)
+    public function storeBulk(Request $request, KpiScoreHistoryService $history)
     {
         $validated = $request->validate([
             'period' => ['required', 'date_format:Y-m'],
@@ -94,12 +313,14 @@ class HrKpiController extends Controller
             'employee_ids.*' => ['integer', 'distinct', 'exists:users,id'],
             'kpi_indicator_id' => ['required', 'integer', 'exists:kpi_indicators,id'],
             'remarks' => ['nullable', 'string'],
+            'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $indicator = KpiIndicator::whereIn('name', $this->manualIndicatorNames())
             ->find($validated['kpi_indicator_id']);
         abort_if(! $indicator, 422, 'One or more selected KPIs are invalid.');
 
+        $workload = [];
         if ($indicator->name === 'Productivity') {
             $workload = $request->validate([
                 'workload_target' => ['required', 'array'],
@@ -126,50 +347,56 @@ class HrKpiController extends Controller
             ]);
         }
 
-        $employeeIds = User::whereIn('role', ['employee', 'manager'])
+        $employees = User::whereIn('role', ['employee', 'manager'])
             ->whereIn('id', $validated['employee_ids'])
+            // Enforce department boundaries on the server, not just through the employee picker UI.
             ->when(auth()->user()->role === 'manager', fn ($query) => $query->where('department_id', auth()->user()->department_id))
-            ->pluck('id');
+            ->get()
+            ->keyBy('id');
 
-        abort_if($employeeIds->count() !== count($validated['employee_ids']), 422, 'One or more selected users cannot receive KPI scores.');
+        abort_if($employees->count() !== count($validated['employee_ids']), 422, 'One or more selected users cannot receive KPI scores.');
 
-        foreach ($employeeIds as $employeeId) {
-            $recordValues = $indicator->name === 'Productivity'
-                ? [
-                    'score' => KpiRecord::productivityScore(
-                        (int) $workload['workload_target'][$employeeId],
-                        (int) $workload['workload_completed'][$employeeId]
-                    ),
-                    'workload_target' => $workload['workload_target'][$employeeId],
-                    'workload_completed' => $workload['workload_completed'][$employeeId],
-                    'encoded_by' => auth()->id(),
-                    'remarks' => $validated['remarks'] ?? null,
-                ]
-                : [
-                    'score' => $validated['score'],
-                    'encoded_by' => auth()->id(),
-                    'remarks' => $validated['remarks'] ?? null,
-                ];
+        // A shared ID groups all scores in this bulk submission for audit and undo history.
+        $transactionId = (string) Str::uuid();
+        DB::transaction(function () use ($validated, $employees, $indicator, $workload, $history, $transactionId): void {
+            foreach ($employees as $employee) {
+                $recordValues = $indicator->name === 'Productivity'
+                    ? [
+                        'score' => KpiRecord::productivityScore(
+                            (int) $workload['workload_target'][$employee->id],
+                            (int) $workload['workload_completed'][$employee->id]
+                        ),
+                        'workload_target' => $workload['workload_target'][$employee->id],
+                        'workload_completed' => $workload['workload_completed'][$employee->id],
+                        'remarks' => $validated['remarks'] ?? null,
+                    ]
+                    : [
+                        'score' => $validated['score'],
+                        'remarks' => $validated['remarks'] ?? null,
+                    ];
 
-            KpiRecord::updateOrCreate(
-                [
-                    'employee_id' => $employeeId,
-                    'kpi_indicator_id' => $indicator->id,
-                    'period' => $validated['period'],
-                ],
-                $recordValues
-            );
-        }
+                $history->save(
+                    $employee,
+                    $indicator,
+                    $validated['period'],
+                    $recordValues,
+                    auth()->user(),
+                    $transactionId,
+                    $validated['reason'] ?? null,
+                );
+            }
+        });
 
         $savedMessage = $indicator->name === 'Productivity'
-            ? "{$employeeIds->count()} productivity workload record(s) saved."
-            : "{$employeeIds->count()} KPI score(s) saved for {$indicator->name}.";
+            ? "{$employees->count()} productivity workload record(s) saved."
+            : "{$employees->count()} KPI score(s) saved for {$indicator->name}.";
 
         return redirect()->back()->with('success', $savedMessage);
     }
 
-    public function store(Request $request, User $employee)
+    public function store(Request $request, User $employee, KpiScoreHistoryService $history)
     {
+        abort_unless(in_array($employee->role, ['employee', 'manager'], true), 404);
         $manualIndicators = KpiIndicator::whereIn('name', $this->manualIndicatorNames())->get();
         $productivityIndicator = $manualIndicators->firstWhere('name', 'Productivity');
         $scoredIndicators = $manualIndicators->reject(fn ($indicator) => $indicator->name === 'Productivity');
@@ -178,6 +405,7 @@ class HrKpiController extends Controller
             'period' => ['required', 'date_format:Y-m'],
             'scores' => ['required', 'array'],
             'remarks' => ['nullable', 'string'],
+            'reason' => ['nullable', 'string', 'max:1000'],
         ];
 
         foreach ($scoredIndicators as $indicator) {
@@ -204,40 +432,44 @@ class HrKpiController extends Controller
             'One or more selected KPIs are invalid.'
         );
 
-        foreach ($validated['scores'] as $indicatorId => $score) {
-            KpiRecord::updateOrCreate(
-                [
-                    'employee_id' => $employee->id,
-                    'kpi_indicator_id' => $indicatorId,
-                    'period' => $validated['period'],
-                ],
-                [
-                    'score' => $score,
-                    'encoded_by' => auth()->id(),
-                    'remarks' => $validated['remarks'] ?? null,
-                ]
-            );
-        }
+        $transactionId = (string) Str::uuid();
+        DB::transaction(function () use ($validated, $employee, $scoredIndicators, $productivityIndicator, $history, $transactionId): void {
+            foreach ($validated['scores'] as $indicatorId => $score) {
+                $indicator = $scoredIndicators->firstWhere('id', (int) $indicatorId);
+                $history->save(
+                    $employee,
+                    $indicator,
+                    $validated['period'],
+                    [
+                        'score' => $score,
+                        'remarks' => $validated['remarks'] ?? null,
+                    ],
+                    auth()->user(),
+                    $transactionId,
+                    $validated['reason'] ?? null,
+                );
+            }
 
-        if ($productivityIndicator) {
-            $target = (int) $validated['workload_target'];
-            $completed = (int) $validated['workload_completed'];
+            if ($productivityIndicator) {
+                $target = (int) $validated['workload_target'];
+                $completed = (int) $validated['workload_completed'];
 
-            KpiRecord::updateOrCreate(
-                [
-                    'employee_id' => $employee->id,
-                    'kpi_indicator_id' => $productivityIndicator->id,
-                    'period' => $validated['period'],
-                ],
-                [
-                    'score' => KpiRecord::productivityScore($target, $completed),
-                    'workload_target' => $target,
-                    'workload_completed' => $completed,
-                    'encoded_by' => auth()->id(),
-                    'remarks' => $validated['remarks'] ?? null,
-                ]
-            );
-        }
+                $history->save(
+                    $employee,
+                    $productivityIndicator,
+                    $validated['period'],
+                    [
+                        'score' => KpiRecord::productivityScore($target, $completed),
+                        'workload_target' => $target,
+                        'workload_completed' => $completed,
+                        'remarks' => $validated['remarks'] ?? null,
+                    ],
+                    auth()->user(),
+                    $transactionId,
+                    $validated['reason'] ?? null,
+                );
+            }
+        });
 
         return redirect()->route('hr.kpi.index')->with('success', "KPI scores saved for {$employee->name}.");
     }

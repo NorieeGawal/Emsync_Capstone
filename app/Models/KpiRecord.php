@@ -28,6 +28,7 @@ class KpiRecord extends Model
 
     public static function productivityScore(int $target, int $completed): float
     {
+        // Cap productivity at 100 so exceeding the target cannot inflate the weighted KPI score.
         return round(min(($completed / $target) * 100, 100), 2);
     }
 

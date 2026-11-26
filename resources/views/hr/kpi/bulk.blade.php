@@ -65,9 +65,30 @@
                     </div>
                 </div>
 
+                <div x-cloak x-show="selectedIndicator !== ''" class="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
+                    <span class="font-semibold text-slate-700">Basis:</span>
+                    <span x-text="
+                        selectedIndicator === 'Productivity'
+                            ? 'Completed workload ÷ target workload × 100, capped at 100%.'
+                            : selectedIndicator === 'Work Quality'
+                                ? 'Accuracy and correctness of completed work; deduct for defects or rework.'
+                                : selectedIndicator === 'Efficiency'
+                                    ? 'Output achieved using the available time and resources.'
+                                    : selectedIndicator === 'Timeliness'
+                                        ? 'Completion and submission against assigned deadlines.'
+                                        : 'Enter the score based on the indicator performance standard.'
+                    "></span>
+                </div>
+
                 <div>
                     <label class="mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Remarks (optional)</label>
                     <textarea name="remarks" rows="2" class="w-full rounded-xl border-slate-300 bg-slate-50 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">{{ old('remarks') }}</textarea>
+                </div>
+
+                <div class="mt-3">
+                    <label class="mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Change reason (required when replacing existing scores)</label>
+                    <input type="text" name="reason" value="{{ old('reason') }}" maxlength="1000" class="w-full rounded-xl border-slate-300 bg-slate-50 text-sm focus:border-[#f4c212] focus:ring-[#f4c212]">
+                    @error('reason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 @error('employee_ids')
