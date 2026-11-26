@@ -146,6 +146,14 @@ class User extends Authenticatable
         $records->loadMissing('kpiIndicator');
         $manualScores = $records->pluck('score', 'kpiIndicator.name')->toArray();
 
+        $manualScores = [
+            'Productivity' => $manualScores['Productivity'] ?? 0,
+            'Efficiency' => $manualScores['Efficiency'] ?? 0,
+            'Work Quality' => $manualScores['Work Quality'] ?? 0,
+            'Timeliness' => $manualScores['Timeliness'] ?? 0,
+            ...$manualScores,
+        ];
+
         $manualScores['Attendance'] = $this->attendancePercentage($period);
         $manualScores['Punctuality'] = $this->punctualityPercentage($period);
 

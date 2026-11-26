@@ -15,7 +15,7 @@ class ManagerEmployeeController extends Controller
 
         $employees = User::where('role', 'employee')
             ->where('department_id', $manager->department_id)
-            ->paginate(10);
+            ->paginate(15);
 
         return view('manager.employees.index', compact('employees'));
     }

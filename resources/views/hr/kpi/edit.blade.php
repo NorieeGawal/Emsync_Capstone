@@ -33,9 +33,12 @@
                     <div class="space-y-3">
                         @foreach($indicators as $indicator)
                             @if($indicator->name === 'Productivity')
-                                <fieldset class="rounded-xl border border-slate-200 bg-white p-3">
-                                    <legend class="px-1 text-sm font-semibold text-slate-700">Productivity workload</legend>
-                                    <p class="mb-3 text-xs leading-5 text-slate-500">Completed ÷ target × 100, capped at 100%. Example: 18 of 20 = 90%.</p>
+                                <div class="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                                    <h4 class="mb-2 text-sm font-semibold text-slate-700">Productivity</h4>
+                                    <div class="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                                        <span class="font-semibold text-slate-700">Basis:</span>
+                                        Completed workload ÷ Target workload × 100, capped at 100%.
+                                    </div>
                                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         <div>
                                             <label for="workload-target" class="mb-1.5 block text-xs font-medium text-slate-600">Target workload</label>
@@ -48,10 +51,23 @@
                                             @error('workload_completed') <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
-                                </fieldset>
+                                </div>
                             @else
-                                <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                                    <label for="score-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
+                                <div class="grid grid-cols-[minmax(0,1fr)_8rem] items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                    <div>
+                                        <label for="score-{{ $indicator->id }}" class="text-sm font-semibold text-slate-700">{{ $indicator->name }}</label>
+                                        <p class="mt-1 text-xs leading-4 text-slate-500">
+                                            @if($indicator->name === 'Work Quality')
+                                                Basis: Accuracy and correctness of work; deduct for defects or rework.
+                                            @elseif($indicator->name === 'Efficiency')
+                                                Basis: Output achieved using available time and resources.
+                                            @elseif($indicator->name === 'Timeliness')
+                                                Basis: Completion and submission against deadlines.
+                                            @else
+                                                Basis: Enter the score based on the indicator's performance standard.
+                                            @endif
+                                        </p>
+                                    </div>
                                     <div>
                                         <input id="score-{{ $indicator->id }}" type="number" step="0.01" min="0" max="100" name="scores[{{ $indicator->id }}]" value="{{ old('scores.' . $indicator->id, $records->get($indicator->id)?->score) }}" placeholder="0-100" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#f4c212] focus:ring-2 focus:ring-[#f4c212]/25" required>
                                         @error('scores.' . $indicator->id) <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror

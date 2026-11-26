@@ -11,13 +11,11 @@
                 <p class="text-xs text-gray-500 uppercase tracking-wide">{{ $name }}</p>
                 <p class="text-2xl font-bold text-blue-900 mt-1">{{ number_format($score, 0) }}%</p>
                 @if($name === 'Productivity')
-                    <p class="mt-1 text-xs text-gray-500">
-                        @if($productivityRecord?->workload_target)
+                    @if($productivityRecord?->workload_target)
+                        <p class="mt-1 text-xs text-gray-500">
                             {{ number_format($productivityRecord->workload_completed) }} completed of {{ number_format($productivityRecord->workload_target) }} target
-                        @else
-                            Workload details not recorded
-                        @endif
-                    </p>
+                        </p>
+                    @endif
                 @endif
                 <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2">
                     <div class="bg-blue-700 h-1.5 rounded-full" style="width: {{ min($score, 100) }}%"></div>

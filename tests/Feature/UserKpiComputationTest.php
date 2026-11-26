@@ -84,6 +84,10 @@ test('user KPI computation returns zero for a period without records', function 
     $employee = User::factory()->create(['role' => 'employee']);
 
     expect($employee->kpiScoresForPeriod('2026-09'))->toBe([
+        'Productivity' => 0,
+        'Efficiency' => 0,
+        'Work Quality' => 0,
+        'Timeliness' => 0,
         'Attendance' => 0.0,
         'Punctuality' => 0.0,
     ]);

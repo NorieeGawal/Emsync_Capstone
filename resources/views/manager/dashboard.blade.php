@@ -30,19 +30,24 @@
             <h4 class="text-[1.15rem] font-bold tracking-[-0.02em] text-slate-800">Team Performance</h4>
         </div>
         <div class="scroll-surface min-h-0 flex-1 overflow-y-auto overflow-x-auto overscroll-contain">
-            <table class="w-full min-w-[520px] text-left text-sm">
+            <table class="w-full min-w-[520px] table-fixed text-left text-sm">
+            <colgroup>
+                <col class="w-[40%]">
+                <col class="w-[20%]">
+                <col class="w-[40%]">
+            </colgroup>
             <thead class="sticky top-0 z-10 bg-[#f8f9fb] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-[inset_0_-1px_0_rgba(148,163,184,0.22)]">
                 <tr>
                     <th class="px-5 py-3.5">Employee</th>
-                    <th class="px-5 py-3.5">Overall Score</th>
-                    <th class="px-5 py-3.5">Standing</th>
+                    <th class="px-5 py-3.5 text-center">Overall Score</th>
+                    <th class="px-5 py-3.5 text-center">Standing</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($employeeScores as $row)
                     <tr class="group transition-colors hover:bg-[#fffdf3]">
                         <td class="px-5 py-3.5 font-semibold text-slate-800">{{ $row['employee']->name }}</td>
-                        <td class="px-5 py-3.5">
+                        <td class="px-5 py-3.5 text-center">
                             <span class="font-semibold
                                 @if($row['overallScore'] >= 85) text-green-700
                                 @elseif($row['overallScore'] >= 70) text-blue-900
@@ -51,8 +56,8 @@
                                 {{ number_format($row['overallScore'], 0) }}%
                             </span>
                         </td>
-                        <td class="px-5 py-3.5">
-                            <span class="inline-flex rounded-full px-2.5 py-1 text-[0.7rem] font-semibold ring-1 ring-inset ring-black/[0.04]
+                        <td class="px-5 py-3.5 text-center">
+                            <span class="inline-flex justify-center rounded-full px-2.5 py-1 text-center text-[0.7rem] font-semibold ring-1 ring-inset ring-black/[0.04]
                                 @if($row['overallScore'] >= 85) bg-green-100 text-green-700
                                 @elseif($row['overallScore'] >= 70) bg-blue-100 text-blue-700
                                 @elseif($row['overallScore'] >= 40) bg-yellow-100 text-yellow-700
